@@ -10,7 +10,7 @@ class Network(torch.nn.Module):
         member variables.
         """
         super(Network, self).__init__()
-        self.bert_model = AlbertModel.from_pretrained('albert-base-v2')
+        self.bert_model = AlbertModel.from_pretrained('albert-base-v2') 
         self.linear_1 = torch.nn.Linear(768, 768)
         self.linear_2 = torch.nn.Linear(768*num_sent, 1024)
         self.linear_3 = torch.nn.Linear(1024, 512)
@@ -18,7 +18,7 @@ class Network(torch.nn.Module):
         self.linear_5 = torch.nn.Linear(256, 128)
         self.linear_6 = torch.nn.Linear(128, 32)
         self.score_layer = torch.nn.Linear(32, 4)
-      
+        self.num_sent=num_sent
 
         self.rank = torchsort.soft_rank
 
@@ -35,7 +35,7 @@ class Network(torch.nn.Module):
         cat_list = []
  
 
-        for i in range(num_sent):
+        for i in range(self.num_sent):
             bert_out = self.bert_model(input_ids = input_ids[:,i,:].long(), attention_mask = attn_mask[:,i,:].float()).pooler_output
             shared_out = torch.relu(self.linear_1(bert_out))
             cat_list.append(shared_out)

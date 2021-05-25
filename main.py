@@ -23,18 +23,17 @@ def parse_args():
     parser.add_argument('--gpu_list', type=str, default="3")   
 
     # dataset settings
-    defaultMode='train'
-    parser.add_argument('--mode', type=str, default=defaultMode,
+    parser.add_argument('--mode', type=str, default='train',
                         choices=['example','preprocess','train', 'test','hyper_search'
                                  'distill'])  # distill : take a trained AR model and decode a training set
-    if defaultMode=='example':
-        parser.add_argument('--train', type=str, nargs='+',default=['data/example/train/train_lower.txt','data/example/train/train_eg.txt','data/example/train/train_label.txt','data/example/train/train_type.txt',None])
-        parser.add_argument('--valid', type=str, nargs='+',default=['data/example/dev/train_lower.txt','data/example/dev/train_eg.txt','data/example/dev/train_label.txt','data/example/dev/train_type.txt','data/example/dev/dev_eval.txt'])
-        parser.add_argument('--test', type=str, nargs='+',default=['data/example/dev/train_lower.txt','data/example/dev/train_eg.txt','data/example/dev/train_label.txt','data/example/dev/train_type.txt','data/example/dev/dev_eval.txt'])
-    else:
-        parser.add_argument('--train', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_train_tokenized_ids.npy","data/real/nips/content/sent_4/nips_train_tokenized_masks.npy","data/real/nips/content/sent_4/nips_train_y.npy"])
-        parser.add_argument('--valid', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
-        parser.add_argument('--test', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
+
+    parser.add_argument('--train', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
+    parser.add_argument('--valid', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
+    parser.add_argument('--test', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
+
+    # parser.add_argument('--train', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_train_tokenized_ids.npy","data/real/nips/content/sent_4/nips_train_tokenized_masks.npy","data/real/nips/content/sent_4/nips_train_y.npy"])
+    # parser.add_argument('--valid', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
+    # parser.add_argument('--test', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
     parser.add_argument('--max_len', type=int, default=None, help='limit the train set sentences to this many tokens')
     
     # settings for model
@@ -45,7 +44,7 @@ def parse_args():
     parser.add_argument('--seed', type=int, default=1234, help='seed for randomness')
     parser.add_argument('--batch_size', type=int, default=16, help='# of tokens processed per batch')
     parser.add_argument('--lr', type=float, default=1.0, help='learning rate')
-    parser.add_argument('--maximum_steps', type=int, default=10, help='maximum steps you take to train a model')
+    parser.add_argument('--max_epochs', type=int, default=10, help='maximum steps you take to train a model')
     parser.add_argument('--drop_ratio', type=float, default=0.5, help='dropout ratio')
     parser.add_argument('--output_parent_path', type=str, default="./")
 
@@ -69,7 +68,7 @@ def override(args, load_dict, except_name):
 
  
 def mkdir_for_output(args):
-    main_path = Path(args.main_path)
+    main_path = Path(args.output_parent_path)
     model_path, log_path=gen_next_output_path(main_path)
     for path in [model_path, log_path]:
         path.mkdir(parents=True, exist_ok=True)
@@ -125,6 +124,7 @@ def run_model(args):
 
 
 if __name__ == '__main__':
+    
     args = parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_list
     run_model(args)

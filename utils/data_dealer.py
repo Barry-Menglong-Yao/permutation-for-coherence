@@ -1,13 +1,13 @@
 from itertools import permutations 
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
+import torch 
 
 
 
-
-def load_data(args,num_sent):
+def load_data(args):
     #DATA LOADING
-
+    num_sent=args.d_mlp
     # permutation list
     permutation_list = list(permutations([i for i in range(num_sent)]))
 
@@ -46,8 +46,12 @@ def load_data(args,num_sent):
 
     #DataLoader
     my_dataset = TensorDataset(train_data_input_ids,train_data_attention_masks, train_new_labels) 
-    my_dataloader = DataLoader(my_dataset, batch_size=8, shuffle=True) 
-    return my_dataloader
+    train_dataloader = DataLoader(my_dataset, batch_size=8, shuffle=True) 
+    
+    #DataLoader
+    val_dataset = TensorDataset(validation_data_input_ids,validation_data_attention_masks, val_new_labels) 
+    val_dataloader = DataLoader(val_dataset, batch_size=8, shuffle=True) 
+    return train_dataloader,val_dataloader
 
 
 def reshaper(to_reshape):
