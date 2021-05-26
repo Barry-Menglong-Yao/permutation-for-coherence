@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from torchtext import data
 import logging
-import random
+import random 
   
 import time
 
@@ -21,17 +21,19 @@ def parse_args():
   
     # environment
     parser.add_argument('--gpu_list', type=str, default="3")   
+    parser.add_argument('--env', type=str, default="server",
+                        choices=['server','colab' ])   
 
     # dataset settings
     parser.add_argument('--mode', type=str, default='train',
                         choices=['example','preprocess','train', 'test','hyper_search'
                                  'distill'])  # distill : take a trained AR model and decode a training set
+    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4')
+    parser.add_argument('--train', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
+    parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
+    parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
 
-    parser.add_argument('--train', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
-    parser.add_argument('--valid', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
-    parser.add_argument('--test', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
-
-    # parser.add_argument('--train', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_train_tokenized_ids.npy","data/real/nips/content/sent_4/nips_train_tokenized_masks.npy","data/real/nips/content/sent_4/nips_train_y.npy"])
+    # parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_y.npy"])
     # parser.add_argument('--valid', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
     # parser.add_argument('--test', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
     parser.add_argument('--max_len', type=int, default=None, help='limit the train set sentences to this many tokens')
@@ -117,7 +119,12 @@ def run_model(args):
 
 
 
-
+def update_mutable_args(args):
+    if args.env=="colab":
+        args.data_dir="../../data/sent_4"
+        args.train=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
+        args.valid=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
+        args.test=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
 
  
  
@@ -126,5 +133,6 @@ def run_model(args):
 if __name__ == '__main__':
     
     args = parse_args()
+    update_mutable_args(args)
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_list
     run_model(args)

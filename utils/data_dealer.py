@@ -12,15 +12,16 @@ def load_data(args):
     permutation_list = list(permutations([i for i in range(num_sent)]))
 
     #loading in data
+    data_parent_dir=args.data_dir
     id_path,mask_path,label_path=args.train
-    train_data_input_ids = np.load(id_path)
-    train_data_attention_masks = np.load(mask_path)
-    train_labels = np.load(label_path)
+    train_data_input_ids = np.load(data_parent_dir+"/"+id_path)
+    train_data_attention_masks = np.load(data_parent_dir+"/"+mask_path)
+    train_labels = np.load(data_parent_dir+"/"+label_path)
 
     val_id_path,val_mask_path,val_label_path=args.valid
-    validation_data_input_ids = np.load(val_id_path)
-    validation_data_attention_masks = np.load(val_mask_path)
-    validation_labels = np.load(val_label_path)
+    validation_data_input_ids = np.load(data_parent_dir+"/"+val_id_path)
+    validation_data_attention_masks = np.load(data_parent_dir+"/"+val_mask_path)
+    validation_labels = np.load(data_parent_dir+"/"+val_label_path)
 
     #relabling
     train_new_labels = []
