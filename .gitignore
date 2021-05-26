@@ -1,9 +1,4 @@
 
-*.pyc
-.vscode/**
-log/**
-models/** 
-data/real/** 
 
 
 # Byte-compiled / optimized / DLL files
@@ -135,3 +130,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.tmp.drivedownload/**
+
+*.pyc
+.vscode/**
+log/**
+models/** 
+data/real/** 
+*.npy

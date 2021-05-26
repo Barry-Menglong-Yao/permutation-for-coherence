@@ -5,9 +5,9 @@ from dba.data_dealer import *
 from model.layers.differential_ranking import * 
 from pathlib import Path
 from utils.saver import * 
-
+from utils.config import * 
 def test(args,  checkpoint):
-    device='cuda' if torch.cuda.is_available() else 'cpu'
+    device=DEVICE
     model = Network(args.d_mlp)
     model=model.to(device)
     checkpoint = torch.load("/content/checkpoints_pytorch/model_0")
@@ -18,7 +18,8 @@ def print_params(model):
  
 def train(args):
     train_dataloader,val_dataloader=load_data(args)
-    device='cuda' if torch.cuda.is_available() else 'cpu'
+    device=DEVICE
+    print(f"use {device}")
     model = Network(args.d_mlp)
     model=model.to(device)
     print_params(model)
