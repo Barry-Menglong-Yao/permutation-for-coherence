@@ -11,19 +11,15 @@ class Network(torch.nn.Module):
         """
         super(Network, self).__init__()
         self.bert_model = AlbertModel.from_pretrained('albert-base-v2') 
-        self.linear_1 = torch.nn.Linear(768, 768)
-        self.linear_2 = torch.nn.Linear(768*num_sent, 1024)
-        self.linear_3 = torch.nn.Linear(1024, 512)
-        self.linear_4 = torch.nn.Linear(512, 256)
-        self.linear_5 = torch.nn.Linear(256, 128)
-        self.linear_6 = torch.nn.Linear(128, 32)
-        self.score_layer = torch.nn.Linear(32, 4)
+        self.linear_1 = torch.nn.Linear(768, 1024)
+        self.linear_2 = torch.nn.Linear(1024*num_sent, 4096)
+        self.score_layer = torch.nn.Linear(4096, 4)
         self.num_sent=num_sent
 
         self.rank = gen_rank_func()
-        self.drop1 = torch.nn.Dropout(p=0.4)
-        self.drop2 = torch.nn.Dropout(p=0.3)
-
+        self.drop1 = torch.nn.Dropout(p=0.5)
+        self.drop2 = torch.nn.Dropout(p=0.5 )
+       
 
     def forward(self, input_ids, attn_mask):
         """
@@ -39,24 +35,14 @@ class Network(torch.nn.Module):
         for i in range(self.num_sent):
             bert_out = self.bert_model(input_ids = input_ids[:,i,:].long(), attention_mask = attn_mask[:,i,:].float()).pooler_output
             shared_out = torch.relu(self.linear_1(bert_out))
+            shared_out=self.drop1(shared_out)
             cat_list.append(shared_out)
 
         out = torch.cat(cat_list, 1)
 
         out = torch.relu(self.linear_2(out))
-
-
-        out = torch.relu(self.linear_3(out))
-        out = self.drop1(out)
-
-        out = torch.relu(self.linear_4(out))
         out = self.drop2(out)
-
-
-        out = torch.relu(self.linear_5(out))
-
-
-        out = torch.relu(self.linear_6(out))
+ 
         out = self.score_layer(out)
 
         out = self.rank(out.cpu(), regularization_strength=1.0) 
