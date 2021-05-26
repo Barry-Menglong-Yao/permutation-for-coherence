@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-
+## borrow from https://github.com/google-research/google-research/tree/master/perturbations
 class PerturbedFunc(torch.autograd.Function):
     """Implementation of a Fenchel Young loss."""
     @staticmethod

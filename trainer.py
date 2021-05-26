@@ -3,6 +3,8 @@ import torch
 from utils.fenchel_young_loss import * 
 from utils.data_dealer import * 
 from utils.differential_ranking import * 
+from pathlib import Path
+from utils.saver import * 
 
 def test(args,  checkpoint):
     device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -29,17 +31,24 @@ def train(args):
         acc = 0
         over_loss =0
         train_steps = 0 
-
+        lr = 5e-7
+        if epoch<1:
+            lr = 5e-7
+        else:
+            lr = 1e-7
+        for g in optimizer.param_groups:
+            g['lr'] = lr
+        print("Learning Rate is: \n", lr)
         
         for steps, (input_ids, attn_masks, train_labels) in enumerate(tqdm(train_dataloader)):
 
-            input_ids = input_ids.to("cuda")
-            attn_masks = attn_masks.to("cuda")
-            train_labels = train_labels.to("cuda")
+            input_ids = input_ids.to(device)
+            attn_masks = attn_masks.to(device)
+            train_labels = train_labels.to(device)
 
             out = model(input_ids, attn_masks)
 
-            loss = criterion(out, train_labels.float()).mean()
+            loss = criterion(out.to(device), train_labels.float()).mean()
 
             # Backward and optimize
             optimizer.zero_grad()
@@ -66,16 +75,17 @@ def train(args):
         val_loss = 0
         val_acc = 0
         val_steps = 0
+        model.eval()
         for steps, (input_ids, attn_masks, val_labels) in enumerate(tqdm(val_dataloader)):
 
-            input_ids = input_ids.to("cuda")
-            attn_masks = attn_masks.to("cuda")
-            val_labels = val_labels.to("cuda")
+            input_ids = input_ids.to(device)
+            attn_masks = attn_masks.to(device)
+            val_labels = val_labels.to(device)
 
             with torch.no_grad():
 
                 out = model(input_ids, attn_masks)            
-                loss = criterion(out, val_labels.float()).mean()
+                loss = criterion(out.to(device), val_labels.float()).mean()
                 val_loss += loss
                 val_acc += my_metric_fn(val_labels, out)
 
@@ -83,13 +93,15 @@ def train(args):
             val_steps = steps+1
 
             
-
+        model.train()
         print("\n EPOCH DONE \n")
-        print(('Epoch: %1.1f, Training Loss: % 2.5f, Training Accuracy % 3.4f, Validation Loss: % 4.5f, Validation Accuracy % 5.4f ' %(epoch, over_loss/(train_steps),acc/(train_steps), val_loss/val_steps, val_acc/val_steps)))
-
+        c = (('Epoch: %1.1f, Training Loss: % 2.5f, Training Accuracy % 3.4f, Validation Loss: % 4.5f, Validation Accuracy % 5.4f ' %(epoch, over_loss/(train_steps),acc/(train_steps), val_loss/val_steps, val_acc/val_steps)))
+        print(c)        
         print("\nSaving Model")
-
-        PATH = '/content/checkpoints_pytorch/model_'+str(epoch)
+        main_path = Path(args.output_parent_path)
+        model_path, log_path=get_output_path_str(main_path)
+         
+        PATH = model_path+'/model_'+str(epoch)
 
         torch.save({
                 'epoch': epoch,

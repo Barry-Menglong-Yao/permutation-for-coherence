@@ -15,7 +15,8 @@ def test_sort():
     import torchsort
     
     x = torch.tensor([[8., 0., 5., 3., 2., 1., 6., 7., 9.]], requires_grad=True).to("cuda")
-    y = torchsort.soft_sort(x)
+    # x = torch.tensor([[8., 0., 5., 3., 2., 1., 6., 7., 9.]], requires_grad=True) 
+    y = torchsort.soft_sort(x.cpu())
     print(y)
 
 @lru_cache(None)
