@@ -121,7 +121,7 @@ def run_model(args):
 
 def update_mutable_args(args):
     if args.env=="colab":
-        args.data_dir="../../data/sent_4"
+        args.data_dir="data/sent_4"
         args.train=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
         args.valid=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
         args.test=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
