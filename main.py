@@ -20,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu_list', type=str, default="3")   
+    parser.add_argument('--gpu_list', type=str, default="0")   
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
 
@@ -29,13 +29,13 @@ def parse_args():
                         choices=['example','preprocess','train', 'test','hyper_search'
                                  'distill'])  # distill : take a trained AR model and decode a training set
     parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4')
-    parser.add_argument('--train', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
+    # parser.add_argument('--train', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
+    # parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
+    # parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
+
+    parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_y.npy"])
     parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
     parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
-
-    # parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_y.npy"])
-    # parser.add_argument('--valid', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
-    # parser.add_argument('--test', type=str, nargs='+',default=["data/real/nips/content/sent_4/nips_valid_tokenized_ids.npy","data/real/nips/content/sent_4/nips_valid_tokenized_masks.npy","data/real/nips/content/sent_4/nips_valid_y.npy"])
     parser.add_argument('--max_len', type=int, default=None, help='limit the train set sentences to this many tokens')
     
     # settings for model
