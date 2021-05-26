@@ -1,4 +1,4 @@
-from utils.differential_ranking import gen_rank_func
+from model.layers.differential_ranking import gen_rank_func
 from transformers import AlbertModel
 import numpy as np
 import torch 
@@ -17,8 +17,8 @@ class Network(torch.nn.Module):
         self.num_sent=num_sent
 
         self.rank = gen_rank_func()
-        self.drop1 = torch.nn.Dropout(p=0.5)
-        self.drop2 = torch.nn.Dropout(p=0.5 )
+        # self.drop1 = torch.nn.Dropout(p=0.5)
+        # self.drop2 = torch.nn.Dropout(p=0.5 )
        
 
     def forward(self, input_ids, attn_mask):
@@ -35,13 +35,13 @@ class Network(torch.nn.Module):
         for i in range(self.num_sent):
             bert_out = self.bert_model(input_ids = input_ids[:,i,:].long(), attention_mask = attn_mask[:,i,:].float()).pooler_output
             shared_out = torch.relu(self.linear_1(bert_out))
-            shared_out=self.drop1(shared_out)
+            # shared_out=self.drop1(shared_out)
             cat_list.append(shared_out)
 
         out = torch.cat(cat_list, 1)
 
         out = torch.relu(self.linear_2(out))
-        out = self.drop2(out)
+        # out = self.drop2(out)
  
         out = self.score_layer(out)
 

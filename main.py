@@ -49,7 +49,7 @@ def parse_args():
     parser.add_argument('--max_epochs', type=int, default=10, help='maximum steps you take to train a model')
     parser.add_argument('--drop_ratio', type=float, default=0.5, help='dropout ratio')
     parser.add_argument('--output_parent_path', type=str, default="./")
-
+    parser.add_argument('--amp', type=str, default="N", help='amp')
 
     # setting for inference
     parser.add_argument('--load_from', nargs='+', default=None, help='load from 1.modelname, 2.lastnumber, 3.number')

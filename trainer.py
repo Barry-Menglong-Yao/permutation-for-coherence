@@ -1,8 +1,8 @@
 from model.model import *
 import torch
 from utils.fenchel_young_loss import * 
-from utils.data_dealer import * 
-from utils.differential_ranking import * 
+from dba.data_dealer import * 
+from model.layers.differential_ranking import * 
 from pathlib import Path
 from utils.saver import * 
 
@@ -25,6 +25,9 @@ def train(args):
     print(model)
     criterion = FenchelYoungLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-6) 
+    if args.amp=='Y':
+        from apex import amp
+        model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
     from tqdm import tqdm
     for epoch in range(args.max_epochs):
 
@@ -52,7 +55,12 @@ def train(args):
 
             # Backward and optimize
             optimizer.zero_grad()
-            loss.backward()
+            if args.amp=='Y':
+                from apex import amp
+                with amp.scale_loss(loss, optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backward()
             optimizer.step()
 
             # compute accuracy
