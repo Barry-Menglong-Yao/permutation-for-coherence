@@ -1,0 +1,4 @@
+pip install sentencepiece
+torchsort
+transformers
+pip install --user -U nltk

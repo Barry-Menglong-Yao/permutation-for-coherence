@@ -15,12 +15,14 @@ import os
 from utils.timer import *
 from utils.constants import *
 from utils.saver import * 
+import dba.preprocess.preprocessor  as preprocessor
+from utils.log import time_flag 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu_list', type=str, default="0")   
+    parser.add_argument('--gpu_list', type=str, default="2")   
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
 
@@ -28,11 +30,7 @@ def parse_args():
     parser.add_argument('--mode', type=str, default='train',
                         choices=['example','preprocess','train', 'test','hyper_search'
                                  'distill'])  # distill : take a trained AR model and decode a training set
-    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4')
-    # parser.add_argument('--train', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
-    # parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
-    # parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
-
+    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4_overlap')
     parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_y.npy"])
     parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
     parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
@@ -40,19 +38,29 @@ def parse_args():
     
     # settings for model
     parser.add_argument('--d_mlp', type=int, default=4, help='dimention size for MLP') 
-    parser.add_argument('--early_stop', type=int, default=10)
+    
 
     # setting for train 
+    #input: data_dir
+    #output: output_parent_dir (model, log)
+    parser.add_argument('--output_parent_dir', type=str, default="./")
+    parser.add_argument('--early_stop', type=int, default=10)
     parser.add_argument('--seed', type=int, default=1234, help='seed for randomness')
     parser.add_argument('--batch_size', type=int, default=16, help='# of tokens processed per batch')
-    parser.add_argument('--lr', type=float, default=1.0, help='learning rate')
-    parser.add_argument('--max_epochs', type=int, default=10, help='maximum steps you take to train a model')
+    parser.add_argument('--lr', type=float, default=1e-6, help='learning rate')
+    parser.add_argument('--max_epochs', type=int, default=100, help='maximum steps you take to train a model')
     parser.add_argument('--drop_ratio', type=float, default=0.5, help='dropout ratio')
-    parser.add_argument('--output_parent_path', type=str, default="./")
     parser.add_argument('--amp', type=str, default="N", help='amp')
 
     # setting for inference
+    #input: load_from, data_dir
     parser.add_argument('--load_from', nargs='+', default=None, help='load from 1.modelname, 2.lastnumber, 3.number')
+    #output: None
+
+    # preprocess setting 
+    #input: coarse_data
+    parser.add_argument('--coarse_data_dir', type=str,default='data/real/preprocess/papers.csv')
+    #output: data_dir
 
     return parser.parse_args()
 
@@ -70,7 +78,7 @@ def override(args, load_dict, except_name):
 
  
 def mkdir_for_output(args):
-    main_path = Path(args.output_parent_path)
+    main_path = Path(args.output_parent_dir)
     model_path, log_path=gen_next_output_path(main_path)
     for path in [model_path, log_path]:
         path.mkdir(parents=True, exist_ok=True)
@@ -108,7 +116,7 @@ def run_model(args):
 
         print('{} Start training'.format(curtime()))
         train(args )
-    else:
+    elif args.mode=="test":
         checkpoint=load_check_point(args)
 
         recover_args(args,checkpoint)
@@ -116,15 +124,17 @@ def run_model(args):
         start = time.time()
         test(args,  checkpoint)
         print('{} inference done, time {} mins'.format(curtime(), (time.time() - start) / 60))
-
+    elif args.mode=="preprocess":
+        data_path = Path(args.data_dir)
+        data_path.mkdir(parents=True, exist_ok=True)
+        preprocessor.preprocess(args )
 
 
 def update_mutable_args(args):
     if args.env=="colab":
         args.data_dir="data/sent_4"
-        args.train=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
-        args.valid=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
-        args.test=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"]
+        args.coarse_data_dir="data/sent_4"
+    args.__dict__["time_flag"]=time_flag
 
  
  
