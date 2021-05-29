@@ -46,6 +46,15 @@ def train(args):
         over_loss =0
         train_steps = 0 
         model.train()
+
+        if epoch<1:
+            lr = 5e-7
+        else:
+            lr = 1e-7
+        for g in optimizer.param_groups:
+            g['lr'] = lr
+        print("Learning Rate is: \n", lr)
+
         for steps, (input_ids, attn_masks, train_labels) in enumerate(tqdm(train_dataloader)):
             input_ids = input_ids.to(device)
             attn_masks = attn_masks.to(device)

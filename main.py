@@ -22,7 +22,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu_list', type=str, default="2")   
+    parser.add_argument('--gpu_list', type=str, default="0")   
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
 
