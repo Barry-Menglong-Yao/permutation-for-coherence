@@ -22,7 +22,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu_list', type=str, default="0")   
+    parser.add_argument('--gpu', type=str, default="1")   
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
 
@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--mode', type=str, default='train',
                         choices=['example','preprocess','train', 'test','hyper_search'
                                  'distill'])  # distill : take a trained AR model and decode a training set
-    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4_overlap')
+    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4_v2')
     parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_y.npy"])
     parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
     parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
@@ -144,5 +144,5 @@ if __name__ == '__main__':
     
     args = parse_args()
     update_mutable_args(args)
-    os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_list
+    os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu 
     run_model(args)

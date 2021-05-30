@@ -91,7 +91,7 @@ def train(args):
         print(c)       
         logger.info(c)
 
-        best_iter,best_score=save_best_model(epoch,val_score,best_iter,best_score,model,args)
+        best_iter,best_score=save_best_model(epoch,val_score,best_iter,best_score,model,args,optimizer,criterion)
 
         if args.early_stop and (epoch - best_iter) >= args.early_stop:
             print('early stop at epc {}'.format(epoch))
@@ -115,7 +115,8 @@ def save_best_model(epoch,score,best_iter,best_score,model,args,optimizer,criter
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 "args":args,
-                'loss': criterion
+                'loss': criterion,
+                "score":best_score
                 }, PATH)
     return best_iter,best_score
 

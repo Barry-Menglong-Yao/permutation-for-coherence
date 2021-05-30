@@ -14,7 +14,7 @@ class Network(torch.nn.Module):
  
         self.linear_1 = torch.nn.Linear(768, 1024)
         self.linear_2 = torch.nn.Linear(1024*num_sent,4096 )
-        self.score_layer = torch.nn.Linear(4096, num_sent)#768*num_sent
+        self.score_layer = torch.nn.Linear(768*num_sent, num_sent)#
         self.num_sent=num_sent
 
         self.rank = gen_rank_func()
