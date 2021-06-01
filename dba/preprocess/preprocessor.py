@@ -15,7 +15,7 @@ import pandas as pd
 import nltk
 from itertools import permutations 
 import numpy as np
-
+import random
 def download_nltk():
     nltk.download('punkt')
 
@@ -103,10 +103,20 @@ def read_text(args):
         while(len(sentences) >= idx + num_sent):      
             #for single sentence
             datapoints.append([sentences[x] for x in range(idx, idx + num_sent)])
-            idx += 1
+            if args.overlap=='Y':
+                idx += 1
+            else:
+                idx+=num_sent
     datapoints = np.array(datapoints)
     print(f'generate {len(datapoints)} examples in total')
+    shuffle_data(datapoints)
     return datapoints
+
+def shuffle_data(datapoints):
+    
+    idx = [i for i in range(len(datapoints))]
+    random.shuffle(idx)
+    datapoints = datapoints[idx]
 
 
 

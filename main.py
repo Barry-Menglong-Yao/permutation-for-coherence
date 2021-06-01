@@ -17,6 +17,7 @@ from utils.constants import *
 from utils.saver import * 
 import dba.preprocess.preprocessor  as preprocessor
 from utils.log import time_flag 
+from utils.log import logger
 
 def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
@@ -30,7 +31,7 @@ def parse_args():
     parser.add_argument('--mode', type=str, default='train',
                         choices=['example','preprocess','train', 'test','hyper_search'
                                  'distill'])  # distill : take a trained AR model and decode a training set
-    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4_v2')
+    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4_shuffle')
     parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_y.npy"])
     parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
     parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
@@ -60,6 +61,7 @@ def parse_args():
     # preprocess setting 
     #input: coarse_data
     parser.add_argument('--coarse_data_dir', type=str,default='data/real/preprocess/papers.csv')
+    parser.add_argument('--overlap', type=str, default="Y", help='overlap')
     #output: data_dir
 
     return parser.parse_args()
@@ -86,6 +88,7 @@ def mkdir_for_output(args):
 def print_args(args):
     args_str = json.dumps(args.__dict__, indent=4, sort_keys=True)
     print(args_str)
+    logger.info(f'data_dir:{args.data_dir}' )
 
 def load_check_point(args):
     if len(args.load_from) == 1:
@@ -145,4 +148,5 @@ if __name__ == '__main__':
     args = parse_args()
     update_mutable_args(args)
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu 
+    
     run_model(args)
