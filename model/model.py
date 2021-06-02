@@ -27,14 +27,14 @@ class Network(torch.nn.Module):
         d_bert=768
         self.linear_1 = torch.nn.Linear(d_bert, d_bert)
         self.linear_2 = torch.nn.Linear(1024*num_sent,4096 )
-        self.score_layer = torch.nn.Linear(d_bert*num_sent, num_sent)#
+        self.score_layer = torch.nn.Linear(d_bert , 1)#
         self.num_sent=num_sent
 
         self.rank = gen_rank_func()
         self.drop1 = torch.nn.Dropout(p=0.5)
         self.drop2 = torch.nn.Dropout(p=0.5 )
         freeze_part_bert(self.bert_model,20)
-        self.transformer_encoder_layer=torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=8, batch_first=True)
+        self.transformer_encoder_layer=torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=num_sent )
 
     def forward(self, input_ids, attn_mask):
         """
@@ -45,22 +45,22 @@ class Network(torch.nn.Module):
 
 
         cat_list = []
- 
-
         for i in range(self.num_sent):
             bert_out = self.bert_model(input_ids = input_ids[:,i,:].long(), attention_mask = attn_mask[:,i,:].float()).pooler_output
-            shared_out = torch.relu(self.linear_1(bert_out))
-            shared_out=self.drop1(shared_out)
-            cat_list.append(shared_out)
-            # cat_list.append(bert_out)
-
-        out = torch.cat(cat_list, 1)
-
+            # shared_out = torch.relu(self.linear_1(bert_out))
+            # shared_out=self.drop1(shared_out)
+            # cat_list.append(shared_out)
+            cat_list.append(bert_out)
+        # out = torch.cat(cat_list, 1)
+        out = torch.stack(cat_list, 0)
+        out =  self.transformer_encoder_layer(out)
+        # (num_sent,batch_size) -> (batch_size,num_sent)
+        out= torch.transpose(out, 0, 1)
         # out = torch.relu(self.linear_2(out))
         # out = self.drop2(out)
  
         out = self.score_layer(out)
-
+        out=torch.squeeze(out)
         out = self.rank(out.cpu(), regularization_strength=1.0) 
 
         return out

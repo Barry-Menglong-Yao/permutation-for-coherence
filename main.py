@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu', type=str, default="1")   
+    parser.add_argument('--gpu', type=str, default="3")   
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
 
@@ -61,7 +61,9 @@ def parse_args():
     # preprocess setting 
     #input: coarse_data
     parser.add_argument('--coarse_data_dir', type=str,default='data/real/preprocess/papers.csv')
-    parser.add_argument('--overlap', type=str, default="Y", help='overlap')
+    parser.add_argument('--overlap', type=str, default="N", help='overlap')
+    parser.add_argument('--task', type=str, default="permutation", help='task',
+                        choices=['permutation','sentence_order'  ])
     #output: data_dir
 
     return parser.parse_args()

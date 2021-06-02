@@ -1,4 +1,7 @@
-pip install sentencepiece
-torchsort
-transformers
-pip install --user -U nltk
+torch==1.7.1
+torchsort==0.1.4
+gpustat==0.6.0
+matplotlib==3.4.2
+nltk==3.6.2
+sentencepiece==0.1.95
+transformers==4.3.3

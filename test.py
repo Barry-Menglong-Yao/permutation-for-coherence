@@ -29,6 +29,4 @@ def cuda_toolkit_available():
         return False
  
 
-
-print( cuda_toolkit_available())
-test_sort()
+ 
