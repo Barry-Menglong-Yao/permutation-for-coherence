@@ -1,17 +1,31 @@
 import torch 
-
+import torchsort 
    
 
 
 def gen_rank_func():
 
     # from https://github.com/teddykoker/torchsort
-    import torchsort 
+    
     return torchsort.soft_rank
+
+
+    
+
 
     # fast-soft-sort from https://github.com/google-research/fast-soft-sort
 
 
+def rank_for_variable_length(values, regularization="l2", regularization_strength=1.0):
+    ranked_order_list=[]
+    for value in values:
+        value=torch.unsqueeze(value,0)
+        ranked_order=torchsort.soft_rank(value , regularization , regularization_strength )
+        ranked_order=torch.squeeze(ranked_order)
+        ranked_order_list.append(ranked_order)
+    ranked_order_tensor=torch.stack(ranked_order_list, 0)
+    
+    return ranked_order_tensor
 
 def ranks(inputs, axis=-1):
 	  

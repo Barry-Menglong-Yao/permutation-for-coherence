@@ -25,18 +25,18 @@ class Network(torch.nn.Module):
         self.bert_model = AlbertModel.from_pretrained('albert-base-v2') 
 
         d_bert=768
-        self.linear_1 = torch.nn.Linear(d_bert, d_bert)
-        self.linear_2 = torch.nn.Linear(1024*num_sent,4096 )
+        # self.linear_1 = torch.nn.Linear(d_bert, d_bert)
+        # self.linear_2 = torch.nn.Linear(1024*num_sent,4096 )
         self.score_layer = torch.nn.Linear(d_bert , 1)#
         self.num_sent=num_sent
 
         self.rank = gen_rank_func()
-        self.drop1 = torch.nn.Dropout(p=0.5)
-        self.drop2 = torch.nn.Dropout(p=0.5 )
+        # self.drop1 = torch.nn.Dropout(p=0.5)
+        # self.drop2 = torch.nn.Dropout(p=0.5 )
         freeze_part_bert(self.bert_model,20)
         self.transformer_encoder_layer=torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=num_sent )
 
-    def forward(self, input_ids, attn_mask):
+    def forward(self, input_ids, attn_mask,sentence_num_list):
         """
         In the forward function we accept a Tensor of input data and we must return
         a Tensor of output data. We can use Modules defined in the constructor as
@@ -45,7 +45,7 @@ class Network(torch.nn.Module):
 
 
         cat_list = []
-        for i in range(self.num_sent):
+        for i in range(input_ids.shape[1]):
             bert_out = self.bert_model(input_ids = input_ids[:,i,:].long(), attention_mask = attn_mask[:,i,:].float()).pooler_output
             # shared_out = torch.relu(self.linear_1(bert_out))
             # shared_out=self.drop1(shared_out)
@@ -53,7 +53,9 @@ class Network(torch.nn.Module):
             cat_list.append(bert_out)
         # out = torch.cat(cat_list, 1)
         out = torch.stack(cat_list, 0)
-        out =  self.transformer_encoder_layer(out)
+        
+        src_key_padding_mask=gen_src_key_padding_mask(  out,sentence_num_list)
+        out =  self.transformer_encoder_layer(out,src_key_padding_mask=src_key_padding_mask)
         # (num_sent,batch_size) -> (batch_size,num_sent)
         out= torch.transpose(out, 0, 1)
         # out = torch.relu(self.linear_2(out))
@@ -61,6 +63,26 @@ class Network(torch.nn.Module):
  
         out = self.score_layer(out)
         out=torch.squeeze(out)
+        out=mask(out,sentence_num_list)
         out = self.rank(out.cpu(), regularization_strength=1.0) 
-
+        #TODO mask in loss and acc
         return out
+
+
+
+def mask(out,sentence_num_list):
+    sentence_mask=gen_mask(out,sentence_num_list)
+    out.masked_fill_(sentence_mask==False ,np.inf)
+    return out
+
+def gen_mask(  out,sentence_num_list):
+    sentence_mask=torch.ones_like(out ,dtype=torch.bool)
+    for i in range(len(sentence_num_list)):
+        sentence_mask[i,sentence_num_list[i]:]=False
+    return sentence_mask
+    
+def gen_src_key_padding_mask(  out,sentence_num_list):
+    sentence_mask=torch.zeros( out.shape[0],out.shape[1], dtype=torch.bool,device=out.device)
+    for i in range(len(sentence_num_list)):
+        sentence_mask[:sentence_num_list[i],i]=True
+    return sentence_mask

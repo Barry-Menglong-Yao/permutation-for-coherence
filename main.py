@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu', type=str, default="3")   
+    parser.add_argument('--gpu', type=str, default="1,3")   
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
 
@@ -31,10 +31,10 @@ def parse_args():
     parser.add_argument('--mode', type=str, default='train',
                         choices=['example','preprocess','train', 'test','hyper_search'
                                  'distill'])  # distill : take a trained AR model and decode a training set
-    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/sent_4_shuffle')
-    parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_y.npy"])
-    parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
-    parser.add_argument('--test', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_y.npy"])
+    parser.add_argument('--data_dir', type=str,default='data/real/nips/content/all_sent')
+    parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_sent_num.npy","nips_train_y.npy"])
+    parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_sent_num.npy","nips_valid_y.npy"])
+    parser.add_argument('--test', type=str, nargs='+',default=["nips_test_tokenized_ids.npy","nips_test_tokenized_masks.npy","nips_test_sent_num.npy","nips_test_y.npy"])
     parser.add_argument('--max_len', type=int, default=None, help='limit the train set sentences to this many tokens')
     
     # settings for model
@@ -52,6 +52,7 @@ def parse_args():
     parser.add_argument('--max_epochs', type=int, default=100, help='maximum steps you take to train a model')
     parser.add_argument('--drop_ratio', type=float, default=0.5, help='dropout ratio')
     parser.add_argument('--amp', type=str, default="N", help='amp')
+    parser.add_argument('--remark', type=str,  help='describe experiment setting')
 
     # setting for inference
     #input: load_from, data_dir
@@ -61,9 +62,11 @@ def parse_args():
     # preprocess setting 
     #input: coarse_data
     parser.add_argument('--coarse_data_dir', type=str,default='data/real/preprocess/papers.csv')
-    parser.add_argument('--overlap', type=str, default="N", help='overlap')
-    parser.add_argument('--task', type=str, default="permutation", help='task',
-                        choices=['permutation','sentence_order'  ])
+    parser.add_argument('--example_type', type=str, default="all_sent", 
+                        choices=['overlap','part_sent','all_sent' ],help='overlap')
+    # parser.add_argument('--task', type=str, default="permutation", help='task',
+    #                     choices=['permutation','sentence_order'  ])
+    
     #output: data_dir
 
     return parser.parse_args()

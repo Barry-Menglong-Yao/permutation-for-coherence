@@ -1,7 +1,7 @@
 
 import torch
 
-
+import numpy as np
 import os
 import sys
 from functools import lru_cache
@@ -29,4 +29,22 @@ def cuda_toolkit_available():
         return False
  
 
+def variable_shape():
+    x = np.array([[1., 2.], [3., 4.]])
+    torch.from_numpy(x)
+    print(x.dtype)
  
+    y = np.array([[1., 2.], [3.]])
+ 
+    device="cuda"
+    from torchtext import data 
+    ORDER = data.Field(batch_first=True, include_lengths=True, pad_token=0, use_vocab=False,
+                        sequential=True)
+    train_new_labels,label_length=ORDER.process(y, device=device)
+     
+ 
+     
+    print(train_new_labels)
+
+
+variable_shape()

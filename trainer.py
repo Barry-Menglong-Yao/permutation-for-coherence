@@ -68,12 +68,13 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
     for g in optimizer.param_groups:
         g['lr'] = lr
     print("Learning Rate is: \n", lr)
-    for steps, (input_ids, attn_masks, train_labels) in enumerate(tqdm(train_dataloader)):
+    for steps, (input_ids, attn_masks,sentence_num_list, train_labels) in enumerate(tqdm(train_dataloader)):
         input_ids = input_ids.to(device)
         attn_masks = attn_masks.to(device)
         train_labels = train_labels.to(device)
 
-        out = model(input_ids, attn_masks)
+
+        out = model(input_ids, attn_masks,sentence_num_list)
 
         loss = criterion(out.to(device), train_labels.float()).mean()
 
