@@ -1,7 +1,7 @@
 import torch 
 import torchsort 
    
-
+from utils.mask import gen_mask
 
 def gen_rank_func():
 
@@ -29,11 +29,11 @@ def rank_for_variable_length(values, regularization="l2", regularization_strengt
 
 def ranks(inputs, axis=-1):
 	  
-    return torch.argsort(torch.argsort(inputs, descending=False, dim=1), dim=1)+1
+    return torch.argsort(torch.argsort(inputs, descending=False, dim=1), dim=1) 
 
 
 
-def my_metric_fn(y_true, y_pred):
+def my_metric_fn(y_true, y_pred,sentence_num_list):
     y_pred = y_pred.to("cpu")
     y_true = y_true.to("cpu")
 
@@ -43,11 +43,21 @@ def my_metric_fn(y_true, y_pred):
     one = torch.ones([1], dtype=torch.int64,  requires_grad = False)
     var_batch = torch.tensor(y_pred.shape[0], dtype=torch.int64,  requires_grad = False)
     main_res = torch.zeros([1], dtype=torch.int64 , requires_grad = False)
-    for i in range(y_pred.shape[0]):
-        sub = torch.subtract(y_true[i,:],cat_pred[i,:])
-        res = torch.eq(zero, torch.count_nonzero(sub))
+    sub = torch.subtract(y_true ,cat_pred )
+    sub_zero=torch.zeros_like(sub)
+    mask=gen_mask(sub,sentence_num_list)
+    sub = torch.where(mask,sub,sub_zero)
+ 
+
+
+    for i in range(sub.shape[0]):
+        
+        res = torch.eq(zero, torch.count_nonzero(sub[i]))
         if (res.item()):
             main_res = torch.add(main_res, one)
 
 
     return torch.divide(main_res,var_batch)  # Note the `axis=-1`
+
+
+

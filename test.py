@@ -46,5 +46,14 @@ def variable_shape():
      
     print(train_new_labels)
 
+def gpu():
+    cuda = torch.device('cuda')     # Default CUDA device
+    cuda1 = torch.device('cuda:1')
+    cuda3 = torch.device('cuda:3')  
+    x = np.array([[1., 2.], [3., 4.]])
+    x=torch.from_numpy(x)
+    print(x)
+    x.to('cuda:1')
+    print(x)
 
-variable_shape()
+gpu()

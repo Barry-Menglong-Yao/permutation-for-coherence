@@ -20,7 +20,7 @@ import random
 def download_nltk():
     nltk.download('punkt')
 
-max_sent_num=16
+max_sent_num=5
 
 def preprocess(args):
     
@@ -129,7 +129,7 @@ def read_text(args):
         sentences = (nltk.sent_tokenize(text))
         if args.example_type=='all_sent':
             sentence_num=len(sentences)
-            if sentence_num>1:
+            if sentence_num>1 and sentence_num<=max_sent_num:
                 
                 example=[sentences[x] for x in range(0, sentence_num)]
                 

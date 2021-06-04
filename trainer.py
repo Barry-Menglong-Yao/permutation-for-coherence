@@ -8,7 +8,7 @@ from utils.saver import *
 from utils.config import * 
 from tqdm import tqdm
 from utils.log import logger
-
+from utils.mask import gen_mask
 
 
 def test(args,  checkpoint):
@@ -22,9 +22,9 @@ def print_params(model):
     print('total parameters:', sum([np.prod(list(p.size())) for p in model.parameters()]))
  
 
-def gen_model_and_optimizer(args,device):
-    model = Network(args.d_mlp)
-    model=model.to(device)
+def gen_model_and_optimizer(args,device,device2):
+    model = Network(device,device2,args.d_mlp)
+    # model=model.to(device)
     print_params(model)
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr) 
@@ -35,14 +35,16 @@ def gen_model_and_optimizer(args,device):
 
 def train(args):
     train_dataloader,val_dataloader=load_data(args)
-    device=DEVICE
+    # device=DEVICE
+    device= torch.device('cuda:'+args.gpu )#
+    device2=torch.device('cuda:'+args.gpu2)#
     print(f"use {device}")
-    model,optimizer=gen_model_and_optimizer(args,device)
+    model,optimizer=gen_model_and_optimizer(args,device,device2)
     criterion = FenchelYoungLoss()
     best_score = -np.inf
     best_iter = 0
     for epoch in range(args.max_epochs):
-        train_loss,train_score=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch)
+        train_loss,train_score=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2)
 
         # DO EVAL ON VALIDATION SET
         val_loss,val_score=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score)
@@ -55,7 +57,7 @@ def train(args):
         
     
 
-def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch):
+def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2):
     acc = 0
     over_loss =0
     train_steps = 0 
@@ -69,14 +71,14 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
         g['lr'] = lr
     print("Learning Rate is: \n", lr)
     for steps, (input_ids, attn_masks,sentence_num_list, train_labels) in enumerate(tqdm(train_dataloader)):
-        input_ids = input_ids.to(device)
-        attn_masks = attn_masks.to(device)
+        
         train_labels = train_labels.to(device)
 
 
         out = model(input_ids, attn_masks,sentence_num_list)
 
-        loss = criterion(out.to(device), train_labels.float()).mean()
+        masked_out=mask_out(out ,sentence_num_list,train_labels.float())
+        loss = criterion(masked_out , train_labels.float()).mean()
 
         # Backward and optimize
         optimizer.zero_grad()
@@ -90,7 +92,7 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
 
         # compute accuracy
         over_loss += loss
-        acc += my_metric_fn(train_labels, out)
+        acc += my_metric_fn(train_labels, out,sentence_num_list)
 
         if steps%1000==0:
             print(('Step: %1.1f, Loss: % 2.5f, Accuracy % 3.4f%%' %(steps,over_loss/(steps+1),acc/(steps+1))))
@@ -98,7 +100,15 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
         train_steps = steps+1
     return over_loss/train_steps,acc/train_steps
 
-    
+
+
+
+
+def mask_out(out,sentence_num_list,train_labels):
+    mask=gen_mask(out,sentence_num_list)
+    mask_out=torch.where(mask,out,train_labels)
+    return mask_out
+
 
 def save_best_model(epoch,score,best_iter,best_score,model,args,optimizer,criterion):
     if score>best_score:
@@ -125,18 +135,18 @@ def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score)
     val_acc = 0
     val_steps = 0
     model.eval()
-    for steps, (input_ids, attn_masks, val_labels) in enumerate(tqdm(val_dataloader)):
+    for steps, (input_ids, attn_masks,sentence_num_list, val_labels) in enumerate(tqdm(val_dataloader)):
 
-        input_ids = input_ids.to(device)
-        attn_masks = attn_masks.to(device)
+    
         val_labels = val_labels.to(device)
 
         with torch.no_grad():
 
-            out = model(input_ids, attn_masks)            
-            loss = criterion(out.to(device), val_labels.float()).mean()
+            out = model(input_ids, attn_masks,sentence_num_list)      
+            masked_out=mask_out(out,sentence_num_list,val_labels.float())      
+            loss = criterion(masked_out , val_labels.float()).mean()
             val_loss += loss
-            val_acc += my_metric_fn(val_labels, out)
+            val_acc += my_metric_fn(val_labels, out,sentence_num_list)
 
 
         val_steps = steps+1

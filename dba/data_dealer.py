@@ -11,19 +11,21 @@ def load_data(args):
     id_path,mask_path,sent_num_path,label_path=args.train
     train_data_input_ids = np.load(data_parent_dir+"/"+id_path)
     train_data_attention_masks = np.load(data_parent_dir+"/"+mask_path)
-    train_sent_num =np.load(data_parent_dir+"/"+sent_num_path)
+    # train_sent_num =np.load(data_parent_dir+"/"+sent_num_path)
     train_labels = np.load(data_parent_dir+"/"+label_path,allow_pickle=True)
 
     val_id_path,val_mask_path,val_sent_num_path,val_label_path=args.valid
     validation_data_input_ids = np.load(data_parent_dir+"/"+val_id_path)
     validation_data_attention_masks = np.load(data_parent_dir+"/"+val_mask_path)
-    validation_sent_num =np.load(data_parent_dir+"/"+val_sent_num_path)
+    # validation_sent_num =np.load(data_parent_dir+"/"+val_sent_num_path)
     validation_labels = np.load(data_parent_dir+"/"+val_label_path,allow_pickle=True)
 
 
     #DATA LOADING
-    train_new_labels,val_new_labels=gen_label(args,train_labels,validation_labels)
     
+    train_new_labels,val_new_labels=gen_label(args,train_labels,validation_labels)
+    train_sent_num=gen_sent_num(args,train_labels)
+    validation_sent_num=gen_sent_num(args,validation_labels)
 
     
 
@@ -53,13 +55,24 @@ def gen_label(args,train_labels,validation_labels):
     val_new_labels=gen_new_label(args,validation_labels)
     return train_new_labels,val_new_labels
 
+def gen_sent_num(args, labels):
+    sent_num_list =[]
+    for label in  labels:
+        if args.example_type=='all_sent':
+            num_sent=len(label)
+        else: 
+            num_sent=args.d_mlp
+        sent_num_list.append(num_sent)
+    return sent_num_list
+
 def gen_new_label(args,train_labels):
     
     if args.example_type=='all_sent':
+        
         ORDER = data.Field(batch_first=True, include_lengths=True, pad_token=0, use_vocab=False,
                         sequential=True)
         train_new_labels,label_length=ORDER.process(train_labels, device=DEVICE)
-  
+
     else:
         num_sent=args.d_mlp
         # permutation list
