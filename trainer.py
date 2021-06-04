@@ -23,8 +23,9 @@ def print_params(model):
  
 
 def gen_model_and_optimizer(args,device,device2):
-    model = Network(device,device2,args.d_mlp)
-    # model=model.to(device)
+    model = Network(device,device2,args.parallel,args.d_mlp)
+    if args.parallel =='none':
+        model=model.to(device)
     print_params(model)
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr) 
@@ -36,21 +37,26 @@ def gen_model_and_optimizer(args,device,device2):
 def train(args):
     train_dataloader,val_dataloader=load_data(args)
     # device=DEVICE
-    device= torch.device('cuda:'+args.gpu )#
-    device2=torch.device('cuda:'+args.gpu2)#
+    if args.parallel =='model':
+        device= torch.device('cuda:'+args.gpu )#
+        device2=torch.device('cuda:'+args.gpu2)#
+    else:
+        device = DEVICE
+        device2= DEVICE
     print(f"use {device}")
     model,optimizer=gen_model_and_optimizer(args,device,device2)
     criterion = FenchelYoungLoss()
     best_score = -np.inf
     best_iter = 0
     for epoch in range(args.max_epochs):
-        train_loss,train_score=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2)
+        train_loss,train_acc,train_pmr=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2)
 
         # DO EVAL ON VALIDATION SET
-        val_loss,val_score=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score)
+        val_loss,val_acc,val_pmr=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_acc,train_pmr)
         
-        best_iter,best_score=save_best_model(epoch,val_score,best_iter,best_score,model,args,optimizer,criterion)
+        best_iter,best_score=save_best_model(epoch,val_acc,val_pmr,best_iter,best_score,model,args,optimizer,criterion)
 
+    
         if args.early_stop and (epoch - best_iter) >= args.early_stop:
             print('early stop at epc {}'.format(epoch))
             break
@@ -58,7 +64,8 @@ def train(args):
     
 
 def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2):
-    acc = 0
+    over_acc = 0
+    over_pmr=0
     over_loss =0
     train_steps = 0 
     model.train()
@@ -92,13 +99,14 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
 
         # compute accuracy
         over_loss += loss
-        acc += my_metric_fn(train_labels, out,sentence_num_list)
-
+        pmr,acc= my_metric_fn(train_labels, out,sentence_num_list)
+        over_acc +=acc
+        over_pmr+=pmr
         if steps%1000==0:
-            print(('Step: %1.1f, Loss: % 2.5f, Accuracy % 3.4f%%' %(steps,over_loss/(steps+1),acc/(steps+1))))
+            print(('Step: %1.1f, Loss: % 2.5f, Accuracy % 3.4f%%, Pmr % 3.4f%%' %(steps,over_loss/(steps+1),over_acc/(steps+1),over_pmr/(steps+1))))
 
         train_steps = steps+1
-    return over_loss/train_steps,acc/train_steps
+    return over_loss/train_steps,over_acc/train_steps,over_pmr/train_steps
 
 
 
@@ -110,7 +118,11 @@ def mask_out(out,sentence_num_list,train_labels):
     return mask_out
 
 
-def save_best_model(epoch,score,best_iter,best_score,model,args,optimizer,criterion):
+def save_best_model(epoch,val_acc,val_pmr,best_iter,best_score,model,args,optimizer,criterion):
+    if args.metric=="pmr":
+        score=val_pmr 
+    else:
+        score=val_acc
     if score>best_score:
         best_score=score
         best_iter=epoch
@@ -130,9 +142,10 @@ def save_best_model(epoch,score,best_iter,best_score,model,args,optimizer,criter
         logger.info(f"save best model at epoch {epoch} with score {score}")
     return best_iter,best_score
 
-def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score):
+def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_acc,train_pmr):
     val_loss = 0
     val_acc = 0
+    val_pmr=0
     val_steps = 0
     model.eval()
     for steps, (input_ids, attn_masks,sentence_num_list, val_labels) in enumerate(tqdm(val_dataloader)):
@@ -146,11 +159,15 @@ def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score)
             masked_out=mask_out(out,sentence_num_list,val_labels.float())      
             loss = criterion(masked_out , val_labels.float()).mean()
             val_loss += loss
-            val_acc += my_metric_fn(val_labels, out,sentence_num_list)
-
+            pmr,acc=my_metric_fn(val_labels, out,sentence_num_list)
+            val_acc +=acc
+            val_pmr+=pmr
 
         val_steps = steps+1
-    c = (('Epoch: %1.1f, Training Loss: % 2.5f, Training Accuracy % 3.4f, Validation Loss: % 4.5f, Validation Accuracy % 5.4f ' %(epoch,train_loss,train_score, val_loss/val_steps,val_acc/val_steps)))
+    c = (('Epoch: %1.1f, Training Loss: % 2.5f, Training Accuracy % 3.4f, Training Pmr % 3.4f%% , Validation Loss: % 4.5f, Validation Accuracy % 5.4f, Validation Pmr % 3.4f%% ' %(epoch,train_loss,train_acc,train_pmr, val_loss/val_steps,val_acc/val_steps,val_pmr/val_steps)))
     print(c)       
     logger.info(c)
-    return val_loss/val_steps, val_acc/val_steps
+    return val_loss/val_steps, val_acc/val_steps, val_pmr/val_steps
+
+            
+         

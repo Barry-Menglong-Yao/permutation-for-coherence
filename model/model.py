@@ -64,13 +64,12 @@ class OrderRanker(torch.nn.Module):
         if len(sentence_num_list)>1:
             out=mask(out,sentence_num_list)
         out = self.rank(out.cpu(), regularization_strength=1.0) 
-
-        #TODO mask in loss and acc
+ 
         return out
 
 
 class Network(torch.nn.Module):
-    def __init__(self, device1,device2,num_sent =4):
+    def __init__(self, device1,device2,parallel,num_sent =4):
         """
         In the constructor we instantiate two nn.Linear modules and assign them as
         member variables.
@@ -78,11 +77,14 @@ class Network(torch.nn.Module):
         super(Network, self).__init__()
 
         # bert_embedder=
-        self.bert_embedder =BertEmbedder().to(device2)
- 
-        self.order_ranker= OrderRanker().to(device1)
+        self.bert_embedder =BertEmbedder()
+        self.order_ranker= OrderRanker()
+        if parallel =='model':
+            self.bert_embedder.to(device2)
+            self.order_ranker.to(device1) 
         self.device1=device1
         self.device2=device2
+        self.parallel=parallel
 
     def forward(self, input_ids, attn_mask,sentence_num_list):
         """
@@ -90,10 +92,18 @@ class Network(torch.nn.Module):
         a Tensor of output data. We can use Modules defined in the constructor as
         well as arbitrary operators on Tensors.
         """
-        input_ids = input_ids.to(self.device2)
-        attn_masks = attn_mask.to(self.device2)
-        out=self.bert_embedder( input_ids,attn_masks).to(self.device1)
- 
+        if self.parallel =='model':
+            input_ids = input_ids.to(self.device2)
+            attn_masks = attn_mask.to(self.device2)
+            out=self.bert_embedder( input_ids,attn_masks)
+            out.to(self.device1)
+        else:
+            input_ids = input_ids.to(self.device1)
+            attn_masks = attn_mask.to(self.device1)
+            out=self.bert_embedder( input_ids,attn_masks)
+        
+            
+
         out = self.order_ranker(out,sentence_num_list)
   
         return out.to(self.device1)

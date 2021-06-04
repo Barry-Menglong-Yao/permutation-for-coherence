@@ -56,6 +56,10 @@ def parse_args():
     parser.add_argument('--drop_ratio', type=float, default=0.5, help='dropout ratio')
     parser.add_argument('--amp', type=str, default="N", help='amp')
     parser.add_argument('--remark', type=str,  help='describe experiment setting')
+    parser.add_argument('--metric', type=str, default='acc',
+                        choices=['pmr','acc','taus' ])
+    parser.add_argument('--parallel', type=str, default='none',
+                        choices=['model','function','none' ])                    
 
     # setting for inference
     #input: load_from, data_dir
@@ -146,8 +150,8 @@ def update_mutable_args(args):
         args.coarse_data_dir="data/sent_4"
     args.__dict__["time_flag"]=time_flag
 
- 
- 
+    if args.parallel =='none':
+        args.__dict__["gpu2"]=args.gpu
 
 
 if __name__ == '__main__':
@@ -155,6 +159,7 @@ if __name__ == '__main__':
     args = parse_args()
     update_mutable_args(args)
     gpu_list=args.gpu+","+args.gpu2
-    # os.environ["CUDA_VISIBLE_DEVICES"]="1,3"
+    if args.parallel =='none':
+        os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu
     
     run_model(args)
