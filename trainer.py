@@ -58,7 +58,7 @@ def train(args):
 
     
         if args.early_stop and (epoch - best_iter) >= args.early_stop:
-            print('early stop at epc {}'.format(epoch))
+            print('early stop at epc {} with best_score{}'.format(epoch,best_score))
             break
         
     

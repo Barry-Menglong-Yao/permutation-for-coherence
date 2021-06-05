@@ -96,14 +96,15 @@ class Network(torch.nn.Module):
             input_ids = input_ids.to(self.device2)
             attn_masks = attn_mask.to(self.device2)
             out=self.bert_embedder( input_ids,attn_masks)
-            out.to(self.device1)
+            out=out.to(self.device1)
+            sentence_num_list=sentence_num_list.to(self.device1)
         else:
             input_ids = input_ids.to(self.device1)
             attn_masks = attn_mask.to(self.device1)
             out=self.bert_embedder( input_ids,attn_masks)
         
             
-
+        
         out = self.order_ranker(out,sentence_num_list)
   
         return out.to(self.device1)

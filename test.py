@@ -1,6 +1,6 @@
 
 import torch
-
+from torch.utils.data import random_split
 import numpy as np
 import os
 import sys
@@ -56,4 +56,8 @@ def gpu():
     x.to('cuda:1')
     print(x)
 
-gpu()
+def split():
+    a,b,c=random_split(range(10), [3, 3,4] )
+    print(len(a),len(b),len(c))
+
+split()

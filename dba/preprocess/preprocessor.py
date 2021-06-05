@@ -20,7 +20,7 @@ import random
 def download_nltk():
     nltk.download('punkt')
 
-max_sent_num=5
+from utils.config import MAX_SENT_NUM
 
 def preprocess(args):
     
@@ -36,7 +36,7 @@ def preprocess(args):
     sentence_test,sentence_y_test,sent_num_list_test=reorder_and_split(datapoints,int((0.9*numAbs))  , int( numAbs ), args)
  
     if args.example_type=='all_sent':
-        num_sent=max_sent_num
+        num_sent=MAX_SENT_NUM
     else:
         num_sent=args.d_mlp 
     train_tokenized_ids,train_tokenized_masks,valid_tokenized_ids,valid_tokenized_masks,test_tokenized_ids,test_tokenized_masks=tokenizer_data(sentence_train, sentence_valid, sentence_test,num_sent)
@@ -98,7 +98,7 @@ def reorder_and_split(datapoints,start,end, args):
             order = list(range(num_sent))
             shuffle(order)
             newL = curSents[order]
-            padded=[ '<pad>' for x in range(num_sent, max_sent_num)]
+            padded=[ '<pad>' for x in range(num_sent, MAX_SENT_NUM)]
             newL=np.append(newL,padded)
             sent_num_list.append(num_sent)
             sentence.append(newL)
@@ -119,6 +119,8 @@ def gen_permutation(num_sent):
     return permutation_list
 
 
+
+
 def read_text(args):
     d3 = pd.read_csv(args.coarse_data_dir)
     datapoints = []  
@@ -129,7 +131,7 @@ def read_text(args):
         sentences = (nltk.sent_tokenize(text))
         if args.example_type=='all_sent':
             sentence_num=len(sentences)
-            if sentence_num>1 and sentence_num<=max_sent_num:
+            if sentence_num>1 and sentence_num<=MAX_SENT_NUM:
                 
                 example=[sentences[x] for x in range(0, sentence_num)]
                 
@@ -148,6 +150,9 @@ def read_text(args):
     print(f'generate {len(datapoints)} examples in total')
     datapoints =shuffle_data(datapoints )
     return datapoints
+
+
+
 
 def shuffle_data(datapoints ):
     datapoints = np.array(datapoints)
