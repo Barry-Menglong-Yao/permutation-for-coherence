@@ -6,7 +6,7 @@ import os
 import sys
 from functools import lru_cache
 from subprocess import DEVNULL, call
-
+from dba.preprocess.preprocessor import *
  
 from setuptools import setup
 from torch.utils import cpp_extension
@@ -56,8 +56,16 @@ def gpu():
     x.to('cuda:1')
     print(x)
 
-def split():
+def split_data():
     a,b,c=random_split(range(10), [3, 3,4] )
     print(len(a),len(b),len(c))
 
-split()
+
+
+def split_str():
+    mary = 'Mary had a little lamb'
+    print( mary.split()) 
+
+
+count_sentence_num()
+# split_str()

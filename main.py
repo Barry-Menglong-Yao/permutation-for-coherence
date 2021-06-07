@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument('--remark', type=str,  help='describe experiment setting')
     parser.add_argument('--metric', type=str, default='acc',
                         choices=['pmr','acc','taus' ])
-    parser.add_argument('--parallel', type=str, default='model',
+    parser.add_argument('--parallel', type=str, default='none',
                         choices=['model','function','none' ])                    
 
     # setting for inference

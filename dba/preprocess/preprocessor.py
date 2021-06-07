@@ -164,8 +164,8 @@ def shuffle_data(datapoints ):
     return datapoints 
 
 
-def count_sentence_length():
-    sent_length_array=np.zeros(20)
+def count_sentence_num():
+    sent_length_array=np.zeros(250)
     total_paragraph_num=0 
     total_sentence_num=0
     file =  'data/real/preprocess/papers.csv'   
@@ -177,10 +177,40 @@ def count_sentence_length():
             total_paragraph_num+=1
             sent_length_array[sent_length]+=1
             total_sentence_num+=sent_length
-    for sent_length,num in enumerate(sent_length_array):
-        if(num>0):
-            print(f'there are {num} paragraph with {sent_length} sentences')
-    print(f'there are total {total_sentence_num} sentences in {total_paragraph_num} paragraph')
+
+
+
+    with open('data/real/statistic_num.txt', 'w') as f:
+        for sent_length,num in enumerate(sent_length_array):
+            if(num>0):
+                print(f'there are {num} paragraph with {sent_length} sentences',file=f)
+        print(f'there are total {total_sentence_num} sentences in {total_paragraph_num} paragraph',file=f)
+         
+
+
+def count_sentence_length():
+    sent_length_array=np.zeros(250)
+    cutted_sentence_num=0 
+    total_sentence_num=0
+    file =  'data/real/preprocess/papers.csv'   
+    d3 = pd.read_csv(file)
+    for text in d3['abstract']:
+        sentences = (nltk.sent_tokenize(text))
+        sent_num=len(sentences)
+        if sent_num>1:
+            for sentence in sentences:
+                words= sentence.split()   
+                sent_length= len(words   )   
+                sent_length_array[sent_length]+=1
+                if sent_length>80:
+                    cutted_sentence_num+=1
+                total_sentence_num+=1
+    
+    with open('data/real/statistic_len.txt', 'w') as f:
+        for sent_length,num in enumerate(sent_length_array):
+            if(num>0):
+                print(f'there are {num} sentence with {sent_length} words', file=f)
+        print(f'there are {cutted_sentence_num} cutted sentences in total {total_sentence_num} sentences', file=f)
          
 
 if __name__ == '__main__':
