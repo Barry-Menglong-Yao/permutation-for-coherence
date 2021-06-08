@@ -64,3 +64,5 @@ def gen_pmr(sub ):
         if (res.item()):
             main_res = torch.add(main_res, one)
     return torch.divide(main_res,var_batch)
+
+

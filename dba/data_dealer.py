@@ -69,11 +69,11 @@ def read_text(args):
         sentences = (nltk.sent_tokenize(text))
         sentence_num=len(sentences)
         if sentence_num>1 and sentence_num<args.max_sent_num:
-             if(is_not_cut(tokenizer,args.max_len,sentences,args.bert_type)):
-                shuffle_sents,order=shuffle_and_pad(sentences,sentence_num,args.max_sent_num )
-                datapoints.append(shuffle_sents)
-                sentence_y.append(order)
-                sentence_num_list.append(sentence_num)
+            #  if(is_not_cut(tokenizer,args.max_len,sentences,args.bert_type)):
+            shuffle_sents,order=shuffle_and_pad(sentences,sentence_num,args.max_sent_num )
+            datapoints.append(shuffle_sents)
+            sentence_y.append(order)
+            sentence_num_list.append(sentence_num)
     return datapoints,sentence_num_list,sentence_y
 
 

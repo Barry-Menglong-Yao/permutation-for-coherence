@@ -1,3 +1,4 @@
+from model.layers.metrics import MetricHolder
 from model.model import *
 import torch
 from utils.fenchel_young_loss import * 
@@ -9,7 +10,7 @@ from utils.config import *
 from tqdm import tqdm
 from utils.log import logger
 from utils.mask import gen_mask
-
+import time
 
 def test(args,  checkpoint):
     device=DEVICE
@@ -35,6 +36,7 @@ def gen_model_and_optimizer(args,device,device2):
     return model,optimizer
 
 def train(args):
+    start = time.time()
     train_dataloader,val_dataloader=load_data(args)
     # device=DEVICE
     if args.parallel =='model':
@@ -46,29 +48,32 @@ def train(args):
     print(f"use {device}")
     model,optimizer=gen_model_and_optimizer(args,device,device2)
     criterion = FenchelYoungLoss()
+    train_metric_holder=MetricHolder(args.metric)
     best_score = -np.inf
     best_pmr = -np.inf
     best_acc = -np.inf
     best_iter = 0
     for epoch in range(args.max_epochs):
-        train_loss,train_acc,train_pmr=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2)
+        train_loss,train_score_str=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2,train_metric_holder)
 
         # DO EVAL ON VALIDATION SET
-        val_loss,val_acc,val_pmr=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_acc,train_pmr)
+        val_loss,best_score,best_epoch=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_str,args)
         
-        log_best_score_of_each_metric(val_acc,val_pmr)
-        best_iter,best_score=save_best_model(epoch,val_acc,val_pmr,best_iter,best_score,model,args,optimizer,criterion)
+         
+        save_best_model(epoch,best_score,best_epoch, model,args,optimizer,criterion)
 
     
         if args.early_stop and (epoch - best_iter) >= args.early_stop:
             print('early stop at epc {} with best_score{}'.format(epoch,best_score))
             break
-        
+     
+    minutes = (time.time() - start) // 60
+    hours = minutes / 60
+    print('use time:{:.1f} hours '.format( hours ))    
     
 
-def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2):
-    over_acc = 0
-    over_pmr=0
+def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2,metric_holder):
+    metric_holder.epoch_reset()
     over_loss =0
     train_steps = 0 
     model.train()
@@ -102,14 +107,16 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
 
         # compute accuracy
         over_loss += loss
-        pmr,acc= my_metric_fn(train_labels, out,sentence_num_list)
-        over_acc +=acc
-        over_pmr+=pmr
+        metric_holder.compute( out,train_labels,sentence_num_list )
+        # pmr,acc= my_metric_fn(train_labels, out,sentence_num_list)
+        # over_acc +=acc
+        # over_pmr+=pmr
         if steps%1000==0:
-            print(('Step: %1.1f, Loss: % 2.5f, Accuracy % 3.4f%%, Pmr % 3.4f%%' %(steps,over_loss/(steps+1),over_acc/(steps+1),over_pmr/(steps+1))))
-
+            score_str=metric_holder.avg_step_score_str(steps+1)
+            print(('Step: %1.1f, Loss: % 2.5f,  % s ' %(steps,over_loss/(steps+1),score_str)))
         train_steps = steps+1
-    return over_loss/train_steps,over_acc/train_steps,over_pmr/train_steps
+
+    return over_loss/train_steps,metric_holder.avg_step_score_str(train_steps+1)
 
 
 
@@ -121,15 +128,9 @@ def mask_out(out,sentence_num_list,train_labels):
     return mask_out
 
 
-def save_best_model(epoch,val_acc,val_pmr,best_iter,best_score,model,args,optimizer,criterion):
-    if args.metric=="pmr":
-        score=val_pmr 
-    else:
-        score=val_acc
-    if score>best_score:
-        best_score=score
-        best_iter=epoch
-         
+def save_best_model(epoch,best_score,best_epoch,model,args,optimizer,criterion):
+     
+    if epoch==best_epoch:
         main_path = Path(args.output_parent_dir)
         model_path, log_path=get_output_path_str(main_path)
         PATH = model_path+'/model_'+args.time_flag
@@ -142,10 +143,11 @@ def save_best_model(epoch,val_acc,val_pmr,best_iter,best_score,model,args,optimi
                 'loss': criterion,
                 "score":best_score
                 }, PATH)
-        logger.info(f"save best model at epoch {epoch} with score {score}")
-    return best_iter,best_score
+        logger.info(f"save best model at epoch {epoch} with score {best_score}")
+    return
 
-def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_acc,train_pmr):
+def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_str,args ):
+    metric_holder=MetricHolder(args.metric)
     val_loss = 0
     val_acc = 0
     val_pmr=0
@@ -162,15 +164,19 @@ def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_acc,tr
             masked_out=mask_out(out,sentence_num_list,val_labels.float())      
             loss = criterion(masked_out , val_labels.float()).mean()
             val_loss += loss
-            pmr,acc=my_metric_fn(val_labels, out,sentence_num_list)
-            val_acc +=acc
-            val_pmr+=pmr
+            metric_holder.compute( out,val_labels,sentence_num_list )
+   
+            
+            # pmr,acc=my_metric_fn(val_labels, out,sentence_num_list)
+            # val_acc +=acc
+            # val_pmr+=pmr
 
         val_steps = steps+1
-    c = (('Epoch: %1.1f, Training Loss: % 2.5f, Training Accuracy % 3.4f, Training Pmr % 3.4f%% , Validation Loss: % 4.5f, Validation Accuracy % 5.4f, Validation Pmr % 3.4f%% ' %(epoch,train_loss,train_acc,train_pmr, val_loss/val_steps,val_acc/val_steps,val_pmr/val_steps)))
+    best_score,best_epoch,val_score_str=metric_holder.update_epoch_score(epoch,val_steps+1)
+    c = (('Epoch: %1.1f, Training Loss: % 2.5f, Training % s , Validation Loss: % 4.5f, Validation % s  ' %(epoch,train_loss,train_score_str, val_loss/val_steps,val_score_str)))
     print(c)       
     logger.info(c)
-    return val_loss/val_steps, val_acc/val_steps, val_pmr/val_steps
+    return val_loss/val_steps,best_score,best_epoch
 
             
          
