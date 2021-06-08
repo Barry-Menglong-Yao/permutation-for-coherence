@@ -1,5 +1,27 @@
 # from https://github.com/DaoD/ConstraintGraph4NSO/blob/main/SecondPhase/Evaluate.py
 
+
+import zope.interface
+  
+
+ 
+class Metric(zope.interface.Interface):
+    best_score = zope.interface.Attribute(" ")
+    best_epoch = zope.interface.Attribute(" ")
+    def compute( y_pred, y_label, sent_num):
+        """compute and update best score"""
+    def method2( ):
+        pass
+
+@zope.interface.implementer(Metric)
+class PMR:
+    def method1(self, x):
+        return x**2
+    def method2(self):
+        return "foo"
+
+
+
 def evaluate_lcs(y_pred, y_label, story_len):
     def lcs(X , Y): 
         m = len(X) 

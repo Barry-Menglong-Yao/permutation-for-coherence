@@ -9,9 +9,9 @@ from random import shuffle
 import pandas as pd
 import nltk
 from torch.utils.data import random_split
-from utils.config import MAX_SENT_NUM  
+from utils.bert_util import *
 from dba.dataset import NipsDataset 
-from transformers import AlbertTokenizer
+
 def load_data(args):
     if args.example_type=='all_sent':
         train_dataset,val_dataset=load_data_from_csv(args)
@@ -64,20 +64,33 @@ def read_text(args):
     sentence_num_list=[]
     sentence_y  = []
     d3 = pd.read_csv(args.coarse_data_dir)
+    tokenizer=gen_tokenizer(args.bert_type)
     for text in d3['abstract']:
         sentences = (nltk.sent_tokenize(text))
         sentence_num=len(sentences)
-        if sentence_num>1:
-            shuffle_sents,order=shuffle_and_pad(sentences,sentence_num)
-            datapoints.append(shuffle_sents)
-            sentence_y.append(order)
-            sentence_num_list.append(sentence_num)
+        if sentence_num>1 and sentence_num<args.max_sent_num:
+             if(is_not_cut(tokenizer,args.max_len,sentences,args.bert_type)):
+                shuffle_sents,order=shuffle_and_pad(sentences,sentence_num,args.max_sent_num )
+                datapoints.append(shuffle_sents)
+                sentence_y.append(order)
+                sentence_num_list.append(sentence_num)
     return datapoints,sentence_num_list,sentence_y
+
+
+
+def is_not_cut(tokenizer, max_sent_length,sentences,bert_type):
+    
+    inputs = tokenizer(sentences, return_tensors="pt", padding=True,return_length =True) 
+    token_len_list=inputs.length 
+    for token_len in token_len_list:
+        if token_len>max_sent_length:
+            return False
+    return True
 
 def load_data_from_csv(args):
     datapoints,sentence_num_list,sentence_y=read_text(args)
-    max_len=80 #TODO check max
-    tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
+    max_len=args.max_len 
+    tokenizer = gen_tokenizer(args.bert_type)
     total_dataset=NipsDataset(datapoints,sentence_num_list,sentence_y,tokenizer,max_len)
 
     total_len = len(datapoints)
@@ -86,15 +99,15 @@ def load_data_from_csv(args):
     train_dataset,val_dataset,test_dataset=random_split(total_dataset, [train_len, valid_len,total_len-train_len- valid_len] )
     return train_dataset,val_dataset
 
-def shuffle_and_pad(sentences,sentence_num):
+def shuffle_and_pad(sentences,sentence_num,max_sent_num):
     cur_sents = np.array(sentences)
     order = list(range(sentence_num))
     shuffle(order)
     shuffle_sents = cur_sents[order]
 
-    padded=[ '<sent_pad>' for x in range(sentence_num, MAX_SENT_NUM)]
+    padded=[ '<sent_pad>' for x in range(sentence_num, max_sent_num)]
     shuffle_sents=np.append(shuffle_sents,padded)
-    padded_order=[ 0 for x in range(sentence_num, MAX_SENT_NUM)]
+    padded_order=[ 0 for x in range(sentence_num, max_sent_num)]
     order.extend(padded_order)
     return shuffle_sents.tolist(),order
 

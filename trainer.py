@@ -23,7 +23,7 @@ def print_params(model):
  
 
 def gen_model_and_optimizer(args,device,device2):
-    model = Network(device,device2,args.parallel,args.d_mlp)
+    model = Network(device,device2,args.parallel,args.bert_type,args.d_mlp)
     if args.parallel =='none':
         model=model.to(device)
     print_params(model)
@@ -47,6 +47,8 @@ def train(args):
     model,optimizer=gen_model_and_optimizer(args,device,device2)
     criterion = FenchelYoungLoss()
     best_score = -np.inf
+    best_pmr = -np.inf
+    best_acc = -np.inf
     best_iter = 0
     for epoch in range(args.max_epochs):
         train_loss,train_acc,train_pmr=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2)
@@ -54,6 +56,7 @@ def train(args):
         # DO EVAL ON VALIDATION SET
         val_loss,val_acc,val_pmr=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_acc,train_pmr)
         
+        log_best_score_of_each_metric(val_acc,val_pmr)
         best_iter,best_score=save_best_model(epoch,val_acc,val_pmr,best_iter,best_score,model,args,optimizer,criterion)
 
     

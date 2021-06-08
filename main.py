@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu', type=str, default="1")  
+    parser.add_argument('--gpu', type=str, default="3")  
     parser.add_argument('--gpu2', type=str, default="3")    
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
@@ -38,8 +38,9 @@ def parse_args():
     parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_sent_num.npy","nips_train_y.npy"])
     parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_sent_num.npy","nips_valid_y.npy"])
     parser.add_argument('--test', type=str, nargs='+',default=["nips_test_tokenized_ids.npy","nips_test_tokenized_masks.npy","nips_test_sent_num.npy","nips_test_y.npy"])
-    parser.add_argument('--max_len', type=int, default=None, help='limit the train set sentences to this many tokens')
-    
+    parser.add_argument('--max_len', type=int, default=106, help='limit the train set sentences to this many tokens')
+    parser.add_argument('--max_sent_num', type=int, default=13, help='limit the train set example to this many sentences')
+
     # settings for model
     parser.add_argument('--d_mlp', type=int, default=4, help='dimention size for MLP') 
     
@@ -59,7 +60,9 @@ def parse_args():
     parser.add_argument('--metric', type=str, default='acc',
                         choices=['pmr','acc','taus' ])
     parser.add_argument('--parallel', type=str, default='none',
-                        choices=['model','function','none' ])                    
+                        choices=['model','data','none' ])                    
+    parser.add_argument('--bert_type', type=str, default='distilbert',
+                        choices=['albert','distilbert'  ])                    
 
     # setting for inference
     #input: load_from, data_dir
@@ -99,7 +102,7 @@ def mkdir_for_output(args):
 def print_args(args):
     args_str = json.dumps(args.__dict__, indent=4, sort_keys=True)
     print(args_str)
-    logger.info(f'data_dir:{args.data_dir}' )
+    logger.info(f'remark:{args.remark}' )
 
 def load_check_point(args):
     if len(args.load_from) == 1:
@@ -124,7 +127,7 @@ def run_model(args):
         mkdir_for_output(args)
 
         # setup random seeds
-        set_seeds(args.seed)
+        # set_seeds(args.seed)
  
         print_args(args)
 

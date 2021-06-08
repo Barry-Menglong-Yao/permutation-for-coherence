@@ -10,7 +10,7 @@ def extract():
         zip.extractall()
 """
 from random import shuffle
-from transformers import AlbertTokenizer
+from utils.bert_util import * 
 # import tensorflow as tf
 import pandas as pd
 import nltk
@@ -39,7 +39,7 @@ def preprocess(args):
         num_sent=MAX_SENT_NUM
     else:
         num_sent=args.d_mlp 
-    train_tokenized_ids,train_tokenized_masks,valid_tokenized_ids,valid_tokenized_masks,test_tokenized_ids,test_tokenized_masks=tokenizer_data(sentence_train, sentence_valid, sentence_test,num_sent)
+    train_tokenized_ids,train_tokenized_masks,valid_tokenized_ids,valid_tokenized_masks,test_tokenized_ids,test_tokenized_masks=tokenizer_data(sentence_train, sentence_valid, sentence_test,num_sent,args.bert_type)
   
     save_data(args,args.train,train_tokenized_ids,train_tokenized_masks,sentence_y_train,sent_num_list_train)
     save_data(args,args.valid,valid_tokenized_ids,valid_tokenized_masks,sentence_y_valid,sent_num_list_valid)
@@ -59,15 +59,15 @@ def save_data(args,data_path_list, tokenized_ids, tokenized_masks,sentence_y,sen
     np.save(sent_num_dir,sent_num_list)
     np.save(labels_dir,sentence_y)
 
-def tokenizer_data(sentence_train, sentence_valid, sentence_test,num_sent):
-    train_tokenized_ids,train_tokenized_masks=gen_id_and_mask(sentence_train,num_sent)
-    valid_tokenized_ids,valid_tokenized_masks=gen_id_and_mask(sentence_valid,num_sent)
-    test_tokenized_ids,test_tokenized_masks=gen_id_and_mask(sentence_test,num_sent)
+def tokenizer_data(sentence_train, sentence_valid, sentence_test,num_sent,bert_type):
+    train_tokenized_ids,train_tokenized_masks=gen_id_and_mask(sentence_train,num_sent,bert_type)
+    valid_tokenized_ids,valid_tokenized_masks=gen_id_and_mask(sentence_valid,num_sent,bert_type)
+    test_tokenized_ids,test_tokenized_masks=gen_id_and_mask(sentence_test,num_sent,bert_type)
     return train_tokenized_ids,train_tokenized_masks,valid_tokenized_ids,valid_tokenized_masks,test_tokenized_ids,test_tokenized_masks
 
-def gen_id_and_mask(sentence,num_sent):
+def gen_id_and_mask(sentence,num_sent,bert_type):
     sent_data= []
-    tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
+    tokenizer =gen_tokenizer(bert_type)
     for x in sentence :
         sent_data += list(x)
          
@@ -188,30 +188,76 @@ def count_sentence_num():
          
 
 
-def count_sentence_length():
+def count_sentence_length(max_sent_num,max_sent_length,bert_type):
+    cut_len=max_sent_length
+    cutted_example_num=0
+    total_example_num=0
     sent_length_array=np.zeros(250)
     cutted_sentence_num=0 
     total_sentence_num=0
-    file =  'data/real/preprocess/papers.csv'   
-    d3 = pd.read_csv(file)
-    for text in d3['abstract']:
-        sentences = (nltk.sent_tokenize(text))
-        sent_num=len(sentences)
-        if sent_num>1:
-            for sentence in sentences:
-                words= sentence.split()   
-                sent_length= len(words   )   
-                sent_length_array[sent_length]+=1
-                if sent_length>80:
-                    cutted_sentence_num+=1
-                total_sentence_num+=1
+    datapoints=gen_examples(max_sent_num)
+    tokenized_id_lens=gen_token(datapoints,max_sent_num,bert_type)
+    for tokenized_id_lens_of_one_example in tokenized_id_lens:
+        is_cutted=False
+        for tokenized_id_lens_of_one_sentence in tokenized_id_lens_of_one_example:
+            sent_length_array[tokenized_id_lens_of_one_sentence]+=1
+            total_sentence_num+=1
+            if tokenized_id_lens_of_one_sentence>cut_len:
+                cutted_sentence_num+=1
+                is_cutted=True
+        total_example_num+=1
+        if is_cutted:
+            cutted_example_num+=1
+           
+    # file =  'data/real/preprocess/papers.csv'   
+    # d3 = pd.read_csv(file)
+    # for text in d3['abstract']:
+    #     sentences = (nltk.sent_tokenize(text))
+    #     sent_num=len(sentences)
+    #     if sent_num>1:
+    #         for sentence in sentences:
+    #             words= sentence.split()   
+    #             sent_length= len(words   )   
+    #             sent_length_array[sent_length]+=1
+    #             if sent_length>80:
+    #                 cutted_sentence_num+=1
+    #             total_sentence_num+=1
+    # inputs=self.tokenizer(text_list, return_tensors="pt", padding='max_length',truncation =True,max_length=self.max_len ) 
     
     with open('data/real/statistic_len.txt', 'w') as f:
         for sent_length,num in enumerate(sent_length_array):
             if(num>0):
                 print(f'there are {num} sentence with {sent_length} words', file=f)
+        print(f'cut in {max_sent_length} sentences',file=f)
         print(f'there are {cutted_sentence_num} cutted sentences in total {total_sentence_num} sentences', file=f)
+        print(f'there are {cutted_example_num} cutted example in total {total_example_num} example', file=f)
+
+
+def gen_examples(max_sent_num):
+    d3 = pd.read_csv('data/real/preprocess/papers.csv'   )
+    datapoints = []  
+
+    for text in d3['abstract']:
+        sentences = (nltk.sent_tokenize(text))
+        sentence_num=len(sentences)
+        if sentence_num>1 and sentence_num<=max_sent_num:
+            padded=[ '<sent_pad>' for x in range(sentence_num, max_sent_num)]
+            sentences.extend(padded)
+            datapoints.append(sentences)
+    return datapoints
+
+def gen_token(datapoints,max_sent_num,bert_type):
+    sent_data= []
+    tokenizer = gen_tokenizer(bert_type)
+    for x in datapoints :
+        sent_data += list(x)
          
+    inputs = tokenizer(list(sent_data), return_tensors="pt", padding=True,return_length =True) 
+    tokenized_ids = inputs.input_ids
+    token_len_list=inputs.length.numpy().reshape((len(tokenized_ids)//max_sent_num, max_sent_num ))
+    return  token_len_list
+
+
 
 if __name__ == '__main__':
     count_sentence_length()

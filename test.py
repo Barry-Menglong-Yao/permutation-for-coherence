@@ -7,7 +7,7 @@ import sys
 from functools import lru_cache
 from subprocess import DEVNULL, call
 from dba.preprocess.preprocessor import *
- 
+from utils.enums import  *
 from setuptools import setup
 from torch.utils import cpp_extension
 os.environ["CUDA_VISIBLE_DEVICES"]="3"
@@ -66,6 +66,32 @@ def split_str():
     mary = 'Mary had a little lamb'
     print( mary.split()) 
 
+import zope.interface
+class IFoo(zope.interface.Interface):
+    x = zope.interface.Attribute("""X blah blah""")
 
-count_sentence_num()
-# split_str()
+    def bar(q, r=None):
+        """bar blah blah"""
+
+
+    
+@zope.interface.implementer(IFoo)
+class Foo:
+
+    def __init__(self, x=None):
+        self.x = x
+
+    def bar(self, q, r=None):
+        return q, r, self.x
+
+    def __repr__(self):
+        return "Foo(%s)" % self.x
+
+def check_interface():
+    print(IFoo.implementedBy(Foo))
+    foo = Foo("In")
+    print(foo.__repr__())
+
+
+# count_sentence_length(13,106,BertType.distilbert)
+check_interface()
