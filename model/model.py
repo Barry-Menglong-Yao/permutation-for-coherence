@@ -54,19 +54,23 @@ class OrderRanker(torch.nn.Module):
         self.rank = gen_rank_func()
  
         # self.encoder_layer = torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=8)
-        # self.self_attn=torch.nn.MultiheadAttention(embed_dim =d_bert, num_heads =1  )
-        self.transformer=torch.nn.Transformer(d_model=d_bert)
+        # self.self_attn=torch.nn.MultiheadAttention(embed_dim =d_bert, num_heads =8  )
+        encoder_layer = torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=8)
+        self.encoder= torch.nn.TransformerEncoder(encoder_layer, num_layers=6)
+        # self.transformer=torch.nn.Transformer(d_model=d_bert)
     def forward(self,out,sentence_num_list):
          
         
         
         src_key_padding_mask=gen_src_key_padding_mask(  out,sentence_num_list)
-        # out = self.self_attn(out, out, out,  
-        #                       key_padding_mask=src_key_padding_mask)[0]
+        # out,weight = self.self_attn(out, out, out,  
+        #                       key_padding_mask=src_key_padding_mask)
+        out = self.encoder(out, 
+                              src_key_padding_mask =src_key_padding_mask) 
         # out = self.encoder_layer(out, 
         #                       src_key_padding_mask =src_key_padding_mask) 
-        out=self.transformer(out,out,src_key_padding_mask =src_key_padding_mask,
-        tgt_key_padding_mask =src_key_padding_mask)
+        # out=self.transformer(out,out,src_key_padding_mask =src_key_padding_mask,
+        # tgt_key_padding_mask =src_key_padding_mask)
         out= torch.transpose(out, 0, 1)
 
  

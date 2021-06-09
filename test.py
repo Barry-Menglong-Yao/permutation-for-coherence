@@ -96,7 +96,7 @@ def dic_check():
     my_dict = {'name': 'Jack', 'age': 26}
     for key,metric in my_dict.items() :
         print(key+":"+str(metric)+"; ")
-# count_sentence_length(13,106,BertType.distilbert)
+count_sentence_length(16,220,BertType.albert)
 # dic_check()
 
 

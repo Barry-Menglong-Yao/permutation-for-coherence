@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu', type=str, default="2")  
+    parser.add_argument('--gpu', type=str, default="1")  
     parser.add_argument('--gpu2', type=str, default="3")    
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
@@ -51,17 +51,17 @@ def parse_args():
     parser.add_argument('--output_parent_dir', type=str, default="./")
     parser.add_argument('--early_stop', type=int, default=0)
     parser.add_argument('--seed', type=int, default=1234, help='seed for randomness')
-    parser.add_argument('--batch_size', type=int, default=16, help='# of tokens processed per batch')
+    parser.add_argument('--batch_size', type=int, default=8, help='# of tokens processed per batch')
     parser.add_argument('--lr', type=float, default=1e-6, help='learning rate')
     parser.add_argument('--max_epochs', type=int, default=200, help='maximum steps you take to train a model')
     parser.add_argument('--drop_ratio', type=float, default=0.5, help='dropout ratio')
     parser.add_argument('--amp', type=str, default="N", help='amp')
     parser.add_argument('--remark', type=str,  help='describe experiment setting')
     parser.add_argument('--metric', type=str, default='acc',
-                        choices=['pmr','acc','taus' ])
+                        choices=['pmr','acc','tau' ])
     parser.add_argument('--parallel', type=str, default='model',
                         choices=['model','data','none' ])                    
-    parser.add_argument('--bert_type', type=str, default='distilbert',
+    parser.add_argument('--bert_type', type=str, default='albert',
                         choices=['albert','distilbert'  ])                    
 
     # setting for inference

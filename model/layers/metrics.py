@@ -20,9 +20,10 @@ class MetricHolder():
 
 
     def compute(self,y_pred, y_true, story_len ):
-        y_pred = y_pred.to("cpu")
-        y_true = y_true.to("cpu")
-        cat_pred = ranks(y_pred)
+        cat_pred = ranks(y_pred.to("cpu"))
+        cat_pred = cat_pred.detach().cpu().numpy()
+        y_true = y_true.detach().cpu().numpy()
+        
         for key,metric in self.metric_dic.items() :
             metric.compute_one_step(cat_pred,y_true , story_len ) 
     def avg_step_score_str(self,steps):

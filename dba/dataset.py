@@ -13,13 +13,16 @@ class NipsDataset(Dataset):
         return len(self.text)
 
     def __getitem__(self, index):
+        sent_num=self.sentence_num_list[index]
         text_list=self.text[index]
         inputs=self.tokenizer(text_list, return_tensors="pt", padding='max_length',truncation =True,max_length=self.max_len ) 
         ids = inputs['input_ids']
         mask = inputs['attention_mask'] 
+        mask[sent_num:,:]=True
+
 
         labels=torch.tensor(self.labels[index], dtype=torch.float)
-        sent_num=torch.tensor(self.sentence_num_list[index], dtype=torch.long)
+        sent_num=torch.tensor(sent_num, dtype=torch.long)
         return  ids, mask,sent_num,labels
             
             

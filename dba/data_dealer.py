@@ -54,8 +54,8 @@ def load_data(args):
         val_dataset = TensorDataset(validation_data_input_ids,validation_data_attention_masks,val_sentence_num, val_new_labels) 
 
     
-    train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True) 
-    val_dataloader = DataLoader(val_dataset, batch_size=8, shuffle=True) 
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True) 
+    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True) 
     return train_dataloader,val_dataloader
 
 

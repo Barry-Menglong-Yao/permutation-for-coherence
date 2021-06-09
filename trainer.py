@@ -48,22 +48,20 @@ def train(args):
     print(f"use {device}")
     model,optimizer=gen_model_and_optimizer(args,device,device2)
     criterion = FenchelYoungLoss()
-    train_metric_holder=MetricHolder(args.metric)
-    best_score = -np.inf
-    best_pmr = -np.inf
-    best_acc = -np.inf
-    best_iter = 0
+    valid_metric_holder=MetricHolder(args.metric) 
+    train_metric_holder=MetricHolder(args.metric) 
+     
     for epoch in range(args.max_epochs):
         train_loss,train_score_str=train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2,train_metric_holder)
 
         # DO EVAL ON VALIDATION SET
-        val_loss,best_score,best_epoch=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_str,args)
+        val_loss,best_score,best_epoch=validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_str,args,valid_metric_holder)
         
          
         save_best_model(epoch,best_score,best_epoch, model,args,optimizer,criterion)
 
     
-        if args.early_stop and (epoch - best_iter) >= args.early_stop:
+        if args.early_stop and (epoch - best_epoch) >= args.early_stop:
             print('early stop at epc {} with best_score{}'.format(epoch,best_score))
             break
      
@@ -73,6 +71,7 @@ def train(args):
     
 
 def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch,device2,metric_holder):
+    
     metric_holder.epoch_reset()
     over_loss =0
     train_steps = 0 
@@ -108,14 +107,12 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
         # compute accuracy
         over_loss += loss
         metric_holder.compute( out,train_labels,sentence_num_list )
-        # pmr,acc= my_metric_fn(train_labels, out,sentence_num_list)
-        # over_acc +=acc
-        # over_pmr+=pmr
+        
         if steps%1000==0:
             score_str=metric_holder.avg_step_score_str(steps+1)
             print(('Step: %1.1f, Loss: % 2.5f,  % s ' %(steps,over_loss/(steps+1),score_str)))
         train_steps = steps+1
-
+        
     return over_loss/train_steps,metric_holder.avg_step_score_str(train_steps+1)
 
 
@@ -146,11 +143,10 @@ def save_best_model(epoch,best_score,best_epoch,model,args,optimizer,criterion):
         logger.info(f"save best model at epoch {epoch} with score {best_score}")
     return
 
-def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_str,args ):
-    metric_holder=MetricHolder(args.metric)
+def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_str,args,metric_holder ):
+    metric_holder.epoch_reset()
     val_loss = 0
-    val_acc = 0
-    val_pmr=0
+     
     val_steps = 0
     model.eval()
     for steps, (input_ids, attn_masks,sentence_num_list, val_labels) in enumerate(tqdm(val_dataloader)):
@@ -166,11 +162,7 @@ def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_
             val_loss += loss
             metric_holder.compute( out,val_labels,sentence_num_list )
    
-            
-            # pmr,acc=my_metric_fn(val_labels, out,sentence_num_list)
-            # val_acc +=acc
-            # val_pmr+=pmr
-
+        
         val_steps = steps+1
     best_score,best_epoch,val_score_str=metric_holder.update_epoch_score(epoch,val_steps+1)
     c = (('Epoch: %1.1f, Training Loss: % 2.5f, Training % s , Validation Loss: % 4.5f, Validation % s  ' %(epoch,train_loss,train_score_str, val_loss/val_steps,val_score_str)))
