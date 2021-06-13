@@ -24,7 +24,7 @@ def parse_args():
   
     # environment
     parser.add_argument('--gpu', type=str, default="0")  
-    parser.add_argument('--gpu2', type=str, default="3")    
+    parser.add_argument('--gpu2', type=str, default="1")    
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
 
@@ -49,7 +49,7 @@ def parse_args():
     #input: data_dir
     #output: output_parent_dir (model, log)
     parser.add_argument('--output_parent_dir', type=str, default="./")
-    parser.add_argument('--early_stop', type=int, default=0)
+    parser.add_argument('--early_stop', type=int, default=10)
     parser.add_argument('--seed', type=int, default=1234, help='seed for randomness')
     parser.add_argument('--batch_size', type=int, default=2, help='# of tokens processed per batch')
     parser.add_argument('--lr', type=float, default=1e-6, help='learning rate')
@@ -63,10 +63,12 @@ def parse_args():
                         choices=['model','data','none' ])                    
     parser.add_argument('--bert_type', type=str, default='albert',
                         choices=['albert','distilbert'  ]) 
-    parser.add_argument('--predict_type', type=str, default='pointer_network',
+    parser.add_argument('--predict_type', type=str, default='rank',
                         choices=['rank','pointer_network'  ])   
-    parser.add_argument('--criterion', type=str, default='nll',
-                        choices=['nll','pointer_network'  ])                           
+    parser.add_argument('--criterion', type=str, default='fenchel_young',
+                        choices=['nll','fenchel_young'  ])    
+    parser.add_argument('--global_encoder', type=str, default='transformer',
+                        choices=['encoder','transformer'  ])                            
  
     # setting for inference
     #input: load_from, data_dir
@@ -75,7 +77,7 @@ def parse_args():
 
     # preprocess setting 
     #input: coarse_data
-    parser.add_argument('--coarse_data_dir', type=str,default='data/example/papers.csv')
+    parser.add_argument('--coarse_data_dir', type=str,default='data/real/preprocess/papers.csv')
     
     # parser.add_argument('--task', type=str, default="permutation", help='task',
     #                     choices=['permutation','sentence_order'  ])

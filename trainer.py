@@ -24,7 +24,7 @@ def print_params(model):
  
 
 def gen_model_and_optimizer(args,device,device2):
-    model = Network(device,device2,args.parallel,args.bert_type,args.predict_type)
+    model = Network(device,device2,args.parallel,args.bert_type,args.predict_type,args.global_encoder)
     if args.parallel =='none':
         model=model.to(device)
     print_params(model)
@@ -122,7 +122,7 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
 
 
 def mask_out(out,sentence_num_list,train_labels):
-    mask=gen_mask(out,sentence_num_list)
+    mask=gen_sentence_mask(out,sentence_num_list)
     mask_out=torch.where(mask,out,train_labels)
     return mask_out
 

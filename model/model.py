@@ -38,7 +38,7 @@ class BertEmbedder(torch.nn.Module):
         return out
 
 class OrderRanker(torch.nn.Module):
-    def __init__(self  ):
+    def __init__(self ,encoder_type ):
         """
         In the constructor we instantiate two nn.Linear modules and assign them as
         member variables.
@@ -53,13 +53,18 @@ class OrderRanker(torch.nn.Module):
         
 
         self.rank = gen_rank_func()
- 
+
         # self.encoder_layer = torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=8)
         # self.self_attn=torch.nn.MultiheadAttention(embed_dim =d_bert, num_heads =8  )
         # encoder_layer = torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=8)
         # self.encoder= torch.nn.TransformerEncoder(encoder_layer, num_layers=6)
-        self.transformer=torch.nn.Transformer(d_model=d_bert)
-    def forward(self,out,sentence_num_list):
+        if encoder_type=="transformer":
+            self.encoder=torch.nn.Transformer(d_model=d_bert)
+        else:
+            encoder_layer = torch.nn.TransformerEncoderLayer(d_model=d_bert, nhead=8)
+            self.encoder= torch.nn.TransformerEncoder(encoder_layer, num_layers=6)
+        self.encoder_type=encoder_type
+    def forward(self,out,sentence_num_list,target):
          
         
         
@@ -70,8 +75,12 @@ class OrderRanker(torch.nn.Module):
         #                       src_key_padding_mask =src_key_padding_mask) 
         # out = self.encoder_layer(out, 
         #                       src_key_padding_mask =src_key_padding_mask) 
-        out=self.transformer(out,out,src_key_padding_mask =src_key_padding_mask,
-        tgt_key_padding_mask =src_key_padding_mask)
+        if self.encoder_type=="transformer":
+            out=self.encoder(out,out,src_key_padding_mask =src_key_padding_mask,
+            tgt_key_padding_mask =src_key_padding_mask)
+        else:
+            out = self.encoder(out, 
+                           src_key_padding_mask =src_key_padding_mask) 
         out= torch.transpose(out, 0, 1)
 
  
@@ -87,7 +96,7 @@ class OrderRanker(torch.nn.Module):
 
 
 class PointerNetwork(torch.nn.Module):
-    def __init__(self  ):
+    def __init__(self,encoder_type   ):
 
         super(PointerNetwork, self).__init__()
         d_bert=768
@@ -223,7 +232,7 @@ def gen_mask(e,target,tgt_len):
 
 
 class Network(torch.nn.Module):
-    def __init__(self, device1,device2,parallel,bert_type,predict_type):
+    def __init__(self, device1,device2,parallel,bert_type,predict_type,encoder_type ):
         """
         In the constructor we instantiate two nn.Linear modules and assign them as
         member variables.
@@ -233,9 +242,9 @@ class Network(torch.nn.Module):
         # bert_embedder=
         self.bert_embedder =BertEmbedder(bert_type)
         if predict_type=="pointer_network":
-            self.order_ranker= PointerNetwork()
+            self.order_ranker= PointerNetwork(encoder_type)
         else:   
-            self.order_ranker= OrderRanker()
+            self.order_ranker= OrderRanker(encoder_type)
         if parallel =='model':
             self.bert_embedder.to(device2)
             self.order_ranker.to(device1) 
