@@ -1,7 +1,7 @@
 import torch 
 import torchsort 
    
-from utils.mask import gen_mask
+from utils.mask import gen_sentence_mask
 
 def gen_rank_func():
 

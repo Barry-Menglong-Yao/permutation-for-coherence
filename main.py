@@ -23,7 +23,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='amazing idea')
   
     # environment
-    parser.add_argument('--gpu', type=str, default="1")  
+    parser.add_argument('--gpu', type=str, default="0")  
     parser.add_argument('--gpu2', type=str, default="3")    
     parser.add_argument('--env', type=str, default="server",
                         choices=['server','colab' ])   
@@ -38,8 +38,8 @@ def parse_args():
     parser.add_argument('--train', type=str, nargs='+',default=["nips_train_tokenized_ids.npy","nips_train_tokenized_masks.npy","nips_train_sent_num.npy","nips_train_y.npy"])
     parser.add_argument('--valid', type=str, nargs='+',default=["nips_valid_tokenized_ids.npy","nips_valid_tokenized_masks.npy","nips_valid_sent_num.npy","nips_valid_y.npy"])
     parser.add_argument('--test', type=str, nargs='+',default=["nips_test_tokenized_ids.npy","nips_test_tokenized_masks.npy","nips_test_sent_num.npy","nips_test_y.npy"])
-    parser.add_argument('--max_len', type=int, default=106, help='limit the train set sentences to this many tokens')
-    parser.add_argument('--max_sent_num', type=int, default=13, help='limit the train set example to this many sentences')
+    parser.add_argument('--max_len', type=int, default=228, help='limit the train set sentences to this many tokens')
+    parser.add_argument('--max_sent_num', type=int, default=16, help='limit the train set example to this many sentences')
 
     # settings for model
     parser.add_argument('--d_mlp', type=int, default=4, help='dimention size for MLP') 
@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument('--output_parent_dir', type=str, default="./")
     parser.add_argument('--early_stop', type=int, default=0)
     parser.add_argument('--seed', type=int, default=1234, help='seed for randomness')
-    parser.add_argument('--batch_size', type=int, default=8, help='# of tokens processed per batch')
+    parser.add_argument('--batch_size', type=int, default=2, help='# of tokens processed per batch')
     parser.add_argument('--lr', type=float, default=1e-6, help='learning rate')
     parser.add_argument('--max_epochs', type=int, default=200, help='maximum steps you take to train a model')
     parser.add_argument('--drop_ratio', type=float, default=0.5, help='dropout ratio')
@@ -62,8 +62,12 @@ def parse_args():
     parser.add_argument('--parallel', type=str, default='model',
                         choices=['model','data','none' ])                    
     parser.add_argument('--bert_type', type=str, default='albert',
-                        choices=['albert','distilbert'  ])                    
-
+                        choices=['albert','distilbert'  ]) 
+    parser.add_argument('--predict_type', type=str, default='pointer_network',
+                        choices=['rank','pointer_network'  ])   
+    parser.add_argument('--criterion', type=str, default='nll',
+                        choices=['nll','pointer_network'  ])                           
+ 
     # setting for inference
     #input: load_from, data_dir
     parser.add_argument('--load_from', nargs='+', default=None, help='load from 1.modelname, 2.lastnumber, 3.number')

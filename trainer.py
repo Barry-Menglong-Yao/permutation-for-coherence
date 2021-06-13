@@ -9,7 +9,7 @@ from utils.saver import *
 from utils.config import * 
 from tqdm import tqdm
 from utils.log import logger
-from utils.mask import gen_mask
+from utils.mask import gen_sentence_mask
 import time
 
 def test(args,  checkpoint):
@@ -24,7 +24,7 @@ def print_params(model):
  
 
 def gen_model_and_optimizer(args,device,device2):
-    model = Network(device,device2,args.parallel,args.bert_type,args.d_mlp)
+    model = Network(device,device2,args.parallel,args.bert_type,args.predict_type)
     if args.parallel =='none':
         model=model.to(device)
     print_params(model)
@@ -89,10 +89,12 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
         train_labels = train_labels.to(device)
 
 
-        out = model(input_ids, attn_masks,sentence_num_list)
+        out,loss = model(input_ids, attn_masks,sentence_num_list,train_labels)
 
-        masked_out=mask_out(out ,sentence_num_list,train_labels.float())
-        loss = criterion(masked_out , train_labels.float()).mean()
+
+        if args.criterion=="fenchel_young":  #TODO 
+            masked_out=mask_out(out ,sentence_num_list,train_labels.float())
+            loss = criterion(masked_out , train_labels.float()).mean()
 
         # Backward and optimize
         optimizer.zero_grad()
@@ -106,14 +108,14 @@ def train_one_epoch(train_dataloader,device,model,criterion,optimizer,args,epoch
 
         # compute accuracy
         over_loss += loss
-        metric_holder.compute( out,train_labels,sentence_num_list )
+        metric_holder.compute( out,train_labels,sentence_num_list ,args.criterion )
         
         if steps%1000==0:
             score_str=metric_holder.avg_step_score_str(steps+1)
             print(('Step: %1.1f, Loss: % 2.5f,  % s ' %(steps,over_loss/(steps+1),score_str)))
         train_steps = steps+1
         
-    return over_loss/train_steps,metric_holder.avg_step_score_str(train_steps+1)
+    return over_loss/train_steps,metric_holder.avg_step_score_str(train_steps)
 
 
 
@@ -156,15 +158,17 @@ def validate(model,val_dataloader,device,criterion,epoch,train_loss,train_score_
 
         with torch.no_grad():
 
-            out = model(input_ids, attn_masks,sentence_num_list)      
-            masked_out=mask_out(out,sentence_num_list,val_labels.float())      
-            loss = criterion(masked_out , val_labels.float()).mean()
+            out,loss = model(input_ids, attn_masks,sentence_num_list,val_labels) 
+
+            if args.criterion=="fenchel_young":     
+                masked_out=mask_out(out,sentence_num_list,val_labels.float())      
+                loss = criterion(masked_out , val_labels.float()).mean()
             val_loss += loss
-            metric_holder.compute( out,val_labels,sentence_num_list )
+            metric_holder.compute( out,val_labels,sentence_num_list ,args.criterion)
    
         
         val_steps = steps+1
-    best_score,best_epoch,val_score_str=metric_holder.update_epoch_score(epoch,val_steps+1)
+    best_score,best_epoch,val_score_str=metric_holder.update_epoch_score(epoch,val_steps )
     c = (('Epoch: %1.1f, Training Loss: % 2.5f, Training % s , Validation Loss: % 4.5f, Validation % s  ' %(epoch,train_loss,train_score_str, val_loss/val_steps,val_score_str)))
     print(c)       
     logger.info(c)

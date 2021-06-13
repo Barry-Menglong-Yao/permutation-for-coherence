@@ -19,8 +19,11 @@ class MetricHolder():
         
 
 
-    def compute(self,y_pred, y_true, story_len ):
-        cat_pred = ranks(y_pred.to("cpu"))
+    def compute(self,y_pred, y_true, story_len ,critic_type):
+        if critic_type=="nll": #TODO 
+            cat_pred=torch.argmax(y_pred, dim=-1)
+        else:
+            cat_pred = ranks(y_pred.to("cpu"))
         cat_pred = cat_pred.detach().cpu().numpy()
         y_true = y_true.detach().cpu().numpy()
         

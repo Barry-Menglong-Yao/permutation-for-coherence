@@ -21,7 +21,7 @@ class NipsDataset(Dataset):
         mask[sent_num:,:]=True
 
 
-        labels=torch.tensor(self.labels[index], dtype=torch.float)
+        labels=torch.tensor(self.labels[index], dtype=torch.long)
         sent_num=torch.tensor(sent_num, dtype=torch.long)
         return  ids, mask,sent_num,labels
             
