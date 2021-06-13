@@ -59,7 +59,7 @@ def parse_args():
     parser.add_argument('--remark', type=str,  help='describe experiment setting')
     parser.add_argument('--metric', type=str, default='acc',
                         choices=['pmr','acc','tau' ])
-    parser.add_argument('--parallel', type=str, default='model',
+    parser.add_argument('--parallel', type=str, default='none',
                         choices=['model','data','none' ])                    
     parser.add_argument('--bert_type', type=str, default='albert',
                         choices=['albert','distilbert'  ]) 
@@ -75,7 +75,7 @@ def parse_args():
 
     # preprocess setting 
     #input: coarse_data
-    parser.add_argument('--coarse_data_dir', type=str,default='data/real/preprocess/papers.csv')
+    parser.add_argument('--coarse_data_dir', type=str,default='data/example/papers.csv')
     
     # parser.add_argument('--task', type=str, default="permutation", help='task',
     #                     choices=['permutation','sentence_order'  ])

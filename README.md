@@ -3,13 +3,13 @@
 
 Author: 
     Jayant Chhillar
+    Barry Yao
     Vaibhav Pulastya
+    
 
 
 ## objective
-train model from "" 
-get embeddings
-use embeddings to do the coherence task
+ 
 
 ## Directory structure:
 "code":
