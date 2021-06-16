@@ -108,7 +108,7 @@ def mkdir_for_output(args):
 def print_args(args):
     args_str = json.dumps(args.__dict__, indent=4, sort_keys=True)
     print(args_str)
-    logger.info(f'remark:{args.remark}' )
+    logger.info(args_str )
 
 def load_check_point(args):
     if len(args.load_from) == 1:

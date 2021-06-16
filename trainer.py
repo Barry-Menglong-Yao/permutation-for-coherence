@@ -20,15 +20,20 @@ def test(args,  checkpoint):
     model.load_state_dict(checkpoint['model_state_dict'])
      
 def print_params(model):
-    print('total parameters:', sum([np.prod(list(p.size())) for p in model.parameters()]))
- 
+    c=f'total parameters:{ sum([np.prod(list(p.size())) for p in model.parameters()])}'
+    print(c)
+    logger.info(c)
+
+    print(model)
+    logger.info(model)
 
 def gen_model_and_optimizer(args,device,device2):
     model = Network(device,device2,args.parallel,args.bert_type,args.predict_type,args.global_encoder)
     if args.parallel =='none':
         model=model.to(device)
     print_params(model)
-    print(model)
+    
+
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr) 
     if args.amp=='Y':
         from apex import amp
